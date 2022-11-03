@@ -8,8 +8,8 @@ Installation
 
 Install the latest version manually using `git`:
 
-    git clone https://github.com/helioforecast/py3DCORE
-    cd py3DCORE
+    git clone https://github.com/helioforecast/py3DCORE_h4c
+    cd py3DCORE_h4c
     pip install .
     pip install -r py3dcore_h4c_requirements.txt
 
