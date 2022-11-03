@@ -1,5 +1,5 @@
 import numpy as np
-from py3dcore.models.toroidal import thin_torus_gh, thin_torus_qs, thin_torus_sq
+from py3dcore_h4c.models.toroidal import thin_torus_gh, thin_torus_qs, thin_torus_sq
 
 from scipy.optimize import least_squares
 

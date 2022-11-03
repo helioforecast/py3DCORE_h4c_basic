@@ -5,7 +5,7 @@ import json
 import numba
 import numpy as np
 import os
-import py3dcore
+import py3dcore_h4c
 
 from ...model import SimulationBlackBox
 from ...rotqs import _numba_quaternion_rotate

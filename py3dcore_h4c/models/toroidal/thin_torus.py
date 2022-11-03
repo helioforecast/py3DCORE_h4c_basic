@@ -4,7 +4,7 @@ import numba
 import numpy as np
 
 from numba import guvectorize
-from py3dcore.rotqs import _numba_quaternion_rotate
+from py3dcore_h4c.rotqs import _numba_quaternion_rotate
 from typing import Tuple
 
 

@@ -5,7 +5,7 @@ import json
 import numba
 import numpy as np
 import os
-import py3dcore
+import py3dcore_h4c
 
 from ...model import SimulationBlackBox
 from heliosat.util import sanitize_dt
@@ -51,7 +51,7 @@ class ToroidalModel(SimulationBlackBox):
     shape_model: str
 
     def __init__(self, dt_0: Union[str, datetime.datetime], ensemble_size: int, iparams: dict = {}, shape_model: str = "thin_torus", mag_model: str = "gh", dtype: type = np.float32) -> None:
-        with open(os.path.join(os.path.dirname(py3dcore.__file__), "models/toroidal/parameters.json")) as fh:
+        with open(os.path.join(os.path.dirname(py3dcore_h4c.__file__), "models/toroidal/parameters.json")) as fh:
             iparams_dict = json.load(fh)
 
         for k, v in iparams.items():
