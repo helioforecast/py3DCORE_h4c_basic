@@ -8,7 +8,7 @@
 import datetime
 import numba
 import numpy as np
-import py3dcore
+import py3dcore_h4c
 import sys
 
 from numba import guvectorize
