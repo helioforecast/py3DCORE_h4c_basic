@@ -1,10 +1,10 @@
-import pandas as pds
-import datetime
+import pandas as pd
+#import datetime as datetime
 import numpy as np
-import time
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import seaborn as sns
+#import time as time
+#import matplotlib.pyplot as plt
+#import matplotlib.dates as mdates
+#import seaborn as sns
 
 class Event:
 
@@ -25,13 +25,13 @@ def make_cat(wini):
         end = wini['mo_end_time'][i]
         cloud = wini['mo_start_time'][i]
         
-        evtList.append(Event(pds.to_datetime(begin), pds.to_datetime(cloud),pds.to_datetime(end)))
+        evtList.append(Event(pd.to_datetime(begin), pd.to_datetime(cloud),pd.to_datetime(end)))
                                                                                                        
     return evtList
 
 def get_cat():
     url='https://helioforecast.space/static/sync/icmecat/HELIO4CAST_ICMECAT_v21.csv'
-    ic=pds.read_csv(url)
+    ic=pd.read_csv(url)
 
     # Spacecraft
     isc = ic.loc[:,'sc_insitu'] 

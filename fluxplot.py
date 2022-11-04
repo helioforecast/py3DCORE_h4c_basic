@@ -1,33 +1,9 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from matplotlib.image import imread
-from matplotlib.colors import LightSource
-from mpl_toolkits.mplot3d import Axes3D
 
 import datetime as datetime
 from datetime import timedelta
-import seaborn as sns
-import pandas as pd
-import os as os
-
-import sunpy as sunpy
-from sunpy.time import parse_time
-import sunpy.data.sample
-import sunpy.map
-from sunpy.net.helioviewer import HelioviewerClient
-from sunpy.map import Map
-from sunpy.coordinates import frames
-import drms as drms
-import glymur as glymur
-import zeep as zeep
 
 import measure as ms
-
-import astropy as astropy
-import astropy.units as u
-import astropy.constants as const
-from astropy.coordinates import SkyCoord
 
 def plot_configure(ax, **kwargs):
     view_azim = kwargs.pop("view_azim", -25)

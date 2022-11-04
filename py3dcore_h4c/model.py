@@ -3,9 +3,9 @@
 """model.py
 """
 
-import datetime
+import datetime as datetime
 from matplotlib.pyplot import pie
-import numba
+import numba as numba
 import numpy as np
 import scipy as sp
 
