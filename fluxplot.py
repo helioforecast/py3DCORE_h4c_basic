@@ -5,29 +5,27 @@ from matplotlib.image import imread
 from matplotlib.colors import LightSource
 from mpl_toolkits.mplot3d import Axes3D
 
-import datetime
+import datetime as datetime
 from datetime import timedelta
 import seaborn as sns
 import pandas as pd
-import os
+import os as os
 
-import sunpy
+import sunpy as sunpy
 from sunpy.time import parse_time
 import sunpy.data.sample
 import sunpy.map
 from sunpy.net.helioviewer import HelioviewerClient
 from sunpy.map import Map
 from sunpy.coordinates import frames
-import drms
-import glymur
-import zeep
+import drms as drms
+import glymur as glymur
+import zeep as zeep
 
 import measure as ms
 
-import astropy
+import astropy as astropy
 import astropy.units as u
-
-import astropy
 import astropy.constants as const
 from astropy.coordinates import SkyCoord
 
