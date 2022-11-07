@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import datetime as datetime
-#import logging as logging
 import heliosat as heliosat
 import numpy as np
 import os as os
