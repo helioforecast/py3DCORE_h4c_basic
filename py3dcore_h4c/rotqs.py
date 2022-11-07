@@ -5,7 +5,7 @@
 Implements functions for using quaternions to rotate vectors.
 """
 
-import numba
+import numba as numba
 import numpy as np
 
 from numba import guvectorize

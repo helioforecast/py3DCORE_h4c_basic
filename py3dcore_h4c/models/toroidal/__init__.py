@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import datetime
-import json
-import numba
+import datetime as datetime
+import json as json
+import numba as numba
 import numpy as np
-import os
-import py3dcore_h4c
+import os as os
+import py3dcore_h4c as py3dcore_h4c
 
 from ...model import SimulationBlackBox
 from heliosat.util import sanitize_dt

@@ -5,11 +5,11 @@
 3DCORE utility functions.
 """
 
-import datetime
-import numba
+import datetime as datetime
+import numba as numba
 import numpy as np
-import py3dcore_h4c
-import sys
+import py3dcore_h4c as py3dcore_h4c
+import sys as sys
 
 from numba import guvectorize
 from scipy.signal import detrend, welch

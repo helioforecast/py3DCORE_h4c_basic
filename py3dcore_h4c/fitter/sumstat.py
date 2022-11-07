@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-"""summary.py
+"""sumstat.py
 
 Implements functions for ABC-SMC summary statistics
 """
 
 import numpy as np
-import numba
+import numba as numba
 
 from typing import Any, Optional
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import numba
+import numba as numba
 import numpy as np
 
 from numba import guvectorize

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
-"""thux.py
+"""swbg.py
+
+Background solar wind
 """
 
-import datetime
-import numba
+import datetime as datetime
+import numba as numba
 import numpy as np
-import os
+import os as os
 
 from scipy.io import loadmat
 

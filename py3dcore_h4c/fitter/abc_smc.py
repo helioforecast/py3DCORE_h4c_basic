@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import datetime
-import logging
-import heliosat
-import multiprocessing
+import datetime as datetime
+import logging as logging
+import heliosat as heliosat
+import multiprocessing as multiprocessing
 import numpy as np
-import os
-import pickle
-import time
+import os as os
+import pickle as pickle
+import time as time
 
 from .base import BaseFitter, FittingData
 from ..model import SimulationBlackBox
@@ -15,7 +15,7 @@ from ..util import set_random_seed
 from heliosat.util import sanitize_dt
 from typing import Any, Optional, Sequence, Tuple, Union
 
-import faulthandler
+import faulthandler as faulthandler
 
 faulthandler.enable()
 

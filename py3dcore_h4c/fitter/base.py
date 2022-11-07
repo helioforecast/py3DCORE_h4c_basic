@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import datetime
-import logging
-import heliosat
+import datetime as datetime
+#import logging as logging
+import heliosat as heliosat
 import numpy as np
-import os
-import pickle
+import os as os
+import pickle as pickle
 
 from ..model import SimulationBlackBox
 from .sumstat import sumstat

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import datetime
-import json
-import numba
+import datetime as datetime
+import json as json
+import numba as numba
 import numpy as np
-import os
-import py3dcore_h4c
+import os as os
+import py3dcore_h4c as py3dcore_h4c
 
 from ...model import SimulationBlackBox
 from ...rotqs import _numba_quaternion_rotate
@@ -61,7 +61,7 @@ class SplineModel(SimulationBlackBox):
     cscoeff_v: np.ndarray
 
     def __init__(self, dt_0: Union[str, datetime.datetime], ensemble_size: int, swbg: SolarWindBG, particles: int = 11, iparams: dict = {}, shape_model: str = "torus", mag_model: str = "gh", dtype: type = np.float32) -> None:
-        with open(os.path.join(os.path.dirname(py3dcore.__file__), "models/spline/parameters.json")) as fh:
+        with open(os.path.join(os.path.dirname(py3dcore_h4c.__file__), "models/spline/parameters.json")) as fh:
             iparams_dict = json.load(fh)
 
         for k, v in iparams.items():
