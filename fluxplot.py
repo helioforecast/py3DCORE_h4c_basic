@@ -3,6 +3,10 @@ import numpy as np
 import datetime as datetime
 from datetime import timedelta
 
+from py3dcore_h4c.models.toroidal import thin_torus_gh, thin_torus_qs, thin_torus_sq
+
+from itertools import product
+
 import measure as ms
 
 def plot_configure(ax, **kwargs):
@@ -88,3 +92,31 @@ def plot_satellite(ax,satpos1,**kwargs):
     ax.scatter3D(xc,yc,zc,**kwargs)
     
     
+def visualize_wireframe(obj, index=0, r=1.0, d=10):
+        """Generate model wireframe.
+
+        Parameters
+        ----------
+        index : int, optional
+            Model run index, by default 0.
+        r : float, optional
+            Surface radius (r=1 equals the boundary of the flux rope), by default 1.0.
+
+        Returns
+        -------
+        np.ndarray
+            Wireframe array (to be used with plot_wireframe).
+        """
+        r = np.array([np.abs(r)], dtype=obj.dtype)
+
+        c = 360 // d + 1
+        u = np.radians(np.r_[0:360. + d:d])
+        v = np.radians(np.r_[0:360. + d:d])
+
+        # combination of wireframe points in (q)
+        arr = np.array(list(product(r, u, v)), dtype=obj.dtype).reshape(c ** 2, 3)
+
+        for i in range(0, len(arr)):
+            thin_torus_qs(arr[i], arr[i], obj.iparams_arr[index], obj.sparams_arr[index], obj.qs_xs[index])
+
+        return arr.reshape((c, c, 3))
