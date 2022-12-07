@@ -41,7 +41,7 @@ class ABC_SMC(BaseFitter):
         self.hist_eps = []
         self.hist_time = []
     
-    def run(self, iter_max: int, ensemble_size: int, reference_frame: str, **kwargs: Any) -> None:
+    def run(self, epsgoal, iter_min: int, iter_max: int, ensemble_size: int, reference_frame: str, **kwargs: Any) -> None:
         logger = logging.getLogger(__name__)
  
         # read kwargs
@@ -68,6 +68,12 @@ class ABC_SMC(BaseFitter):
 
         try:
             for iter_i in range(self.iter_i, iter_max):
+                    
+                if iter_i >= iter_min:
+                    if self.hist_eps[-1] < epsgoal:
+                        kill_flag = True
+                        break
+                
                 logger.info("running iteration %i", iter_i)
 
                 timer_iter = time.time()
@@ -76,6 +82,8 @@ class ABC_SMC(BaseFitter):
                     _time_offset = time_offsets[-1]
                 else:
                     _time_offset = time_offsets[iter_i]
+                
+                    
 
                 data_obj.generate_data(_time_offset, **data_kwargs)
 

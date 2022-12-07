@@ -9,6 +9,13 @@ class Event:
         self.duration = self.end-self.begin
         self.cloud = cloudbegin
         
+    def __eq__(self, other):
+        '''
+        return True if other overlaps self during 65/100 of the time
+        '''
+        return overlap(self, other) > 0.65*self.duration
+
+        
 def make_cat(wini):
     '''
     read catalog and return eventlist
