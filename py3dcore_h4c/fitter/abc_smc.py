@@ -41,7 +41,7 @@ class ABC_SMC(BaseFitter):
         self.hist_eps = []
         self.hist_time = []
     
-    def run(self, epsgoal, iter_min: int, iter_max: int, ensemble_size: int, reference_frame: str, **kwargs: Any) -> None:
+    def run(self, epsgoal=0.3, iter_min=10, iter_max=15, ensemble_size=512, reference_frame="HEEQ", **kwargs: Any) -> None:
         logger = logging.getLogger(__name__)
  
         # read kwargs
