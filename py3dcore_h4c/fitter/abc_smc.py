@@ -71,6 +71,7 @@ class ABC_SMC(BaseFitter):
                     
                 if iter_i >= iter_min:
                     if self.hist_eps[-1] < epsgoal:
+                        logger.info("fitting terminated, epsgoal reached: eps < ", epsgoal) 
                         kill_flag = True
                         break
                 
