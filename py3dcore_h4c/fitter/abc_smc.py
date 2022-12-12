@@ -71,12 +71,12 @@ class ABC_SMC(BaseFitter):
                     
                 if iter_i >= iter_min:
                     if self.hist_eps[-1] < epsgoal:
-                        logger.info("fitting terminated, epsgoal reached: eps < ", epsgoal) 
+                        logger.info("fitting terminated, epsgoal reached: eps < %s", epsgoal) 
                         kill_flag = True
                         break
                 
                 logger.info("running iteration %i", iter_i)
-
+                        
                 timer_iter = time.time()
 
                 if iter_i >= len(time_offsets):
@@ -141,6 +141,9 @@ class ABC_SMC(BaseFitter):
                         logger.warning("no hits, aborting")
                         kill_flag = True
                         break
+                        
+                if iter_i == (iter_min-1):
+                    logger.info("fitting terminated, iter_max reached: %i", iter_max)
 
                 if kill_flag:
                     break
