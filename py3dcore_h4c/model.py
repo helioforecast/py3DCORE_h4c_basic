@@ -17,6 +17,49 @@ from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
 class SimulationBlackBox(object):
     """SimulationBlackBox class.
+        
+    
+    Sets the following properties for self:
+        dt_0                 sanitized launch time
+        dt_t                 launch time
+        
+        iparams                initial parameters
+        sparams                state parameters
+        ensemble_size          ??????
+        dtype                  ??????
+        iparams_array          initial parameters for each ensemble member
+        iparams_kernel         ??????
+        iparams_weight         ??????
+        iparams_kernel_decomp  ??????
+        sparams_arr            state parameters for each ensemble 
+        
+        qs_sx                  ?????? to rotate from s to x
+        qs_xs                  ?????? to rotate from x to s
+
+        iparams_meta           ??????
+        
+    
+    
+    Arguments:
+        dt_0                   launch time
+        ensemble_size          ?????
+        iparams                initial parameters
+        sparams                state parameters
+         
+    Returns:
+        None
+    
+    Functions:
+        generator
+        propagator
+        simulator
+        simulator_mag
+        update_iparams
+        update_kernels
+        update_weights
+        perturb_iparams
+        update_iparams_meta
+        visualize_shape
     """
     dt_0: datetime.datetime
     dt_t: Optional[datetime.datetime]
@@ -65,19 +108,37 @@ class SimulationBlackBox(object):
         self.qs_xs = np.empty((self.ensemble_size, 4), dtype=self.dtype)
 
         self.iparams_meta = np.empty((len(self.iparams), 7), dtype=self.dtype)
+        
+        #iparams_meta is updated
         self.update_iparams_meta()
  
     def generator(self, random_seed: int = 42) -> None:
+        
+    """
+    Handles the distributions for each initial parameter and generates quaternions
+    Sets the following properties for self:
+        dt_t              dt_0
+        iparams_arr       sets the distribution and its values for each iparam
+        
+    Arguments:
+        random_seed               random seed
+        
+    Returns:
+        None
+    """
+        # random seed gets set
         set_random_seed(random_seed)
-
+        
+        # each initial parameter gets stored with its according distribution
         for k, iparam in self.iparams.items():
             ii = iparam["index"]
             dist = iparam["distribution"]
 
+            #  inner function taking a callable func, max and min value
             def trunc_generator(func: Callable, max_v: float, min_v: float, size: int, **kwargs: Any) -> np.ndarray:
                 numbers = func(size=size, **kwargs)
                 for _ in range(100):
-                    flt = ((numbers > max_v) | (numbers < min_v))
+                    flt = ((numbers > max_v) | (numbers < min_v)) # bitwise or function
                     if np.sum(flt) == 0:
                         return numbers
                     numbers[flt] = func(size=len(flt), **kwargs)[flt]
@@ -93,7 +154,7 @@ class SimulationBlackBox(object):
             else:
                 raise NotImplementedError("parameter distribution \"{0!s}\" is not implemented".format(dist))
 
-        generate_quaternions(self.iparams_arr, self.qs_sx, self.qs_xs)
+        generate_quaternions(self.iparams_arr, self.qs_sx, self.qs_xs) #quaternions are generated to rotate from s to x and back
 
         self.dt_t = self.dt_0
 
@@ -182,6 +243,13 @@ class SimulationBlackBox(object):
         self.dt_t = self.dt_0
 
     def update_iparams_meta(self) -> None:
+        
+    """
+    Update the initial parameters meta. For each iparam and according
+    distribution the current values are stored.
+    Sets the following properties for self:
+            iparams_meta              sanitized launch time
+    """
         for k, iparam in self.iparams.items():
             ii = iparam["index"]
             dist = iparam["distribution"]

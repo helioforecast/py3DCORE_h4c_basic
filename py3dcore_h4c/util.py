@@ -42,30 +42,45 @@ def ldl_decomp(mat: np.ndarray, res: np.ndarray) -> None:
 
 
 def mag_fft(dt: Sequence[datetime.datetime], bdt: np.ndarray, sampling_freq: int) -> Tuple[np.ndarray, np.ndarray]:
+    
     """Computes the mean power spectrum distribution from a magnetic field measurements over all three vector components.
 
     Note: Assumes that P(k) is the same for all three vector components.
+    
+    Arguments:
+        dt                datetime objects (time axis)
+        bdt               according magnetic field data
+        sampling_freq     Sampling frequency of data
+        
+    Returns:
+        fF                array containing the sample frequencies
+        fS                mean power spectrum ?????
     """
-    n_s = int(((dt[-1] - dt[0]).total_seconds() / 3600) - 1)
-    n_perseg = np.min([len(bdt), 256])
+    
+    n_s = int(((dt[-1] - dt[0]).total_seconds() / 3600) - 1) # ????? sampling frequency in hours - 1
+    n_perseg = np.min([len(bdt), 256]) # gives the length of the dataframe if it is larger than 256, otherwise 256
 
-    p_bX = detrend(bdt[:, 0], type="linear", bp=n_s)
+    # the scipy function detrend removes any linear trend along a given axis
+    
+    p_bX = detrend(bdt[:, 0], type="linear", bp=n_s) 
     p_bY = detrend(bdt[:, 1], type="linear", bp=n_s)
     p_bZ = detrend(bdt[:, 2], type="linear", bp=n_s)
 
+    # the scipy function welch estimates the power spectral density using Welch’s method for a given length of each segment and the sampling frequency. It returns an array of sample frequencies and the power spectral density.
+    
     _,  wX = welch(p_bX, fs=1 / sampling_freq, nperseg=n_perseg)
     _,  wY = welch(p_bY, fs=1 / sampling_freq, nperseg=n_perseg)
     wF, wZ = welch(p_bZ, fs=1 / sampling_freq, nperseg=n_perseg)
 
-    wS = (wX + wY + wZ) / 3
+    wS = (wX + wY + wZ) / 3 # the power spectrum is averages across all three components
 
     # convert P(k) into suitable form for fft
-    fF = np.fft.fftfreq(len(p_bX), d=sampling_freq)
+    fF = np.fft.fftfreq(len(p_bX), d=sampling_freq) # returns array of length len(p_bX) containing the sample frequencies
     fS = np.zeros((len(fF)))
 
     for i in range(len(fF)):
         k = np.abs(fF[i])
-        fS[i] = np.sqrt(wS[np.argmin(np.abs(k - wF))])
+        fS[i] = np.sqrt(wS[np.argmin(np.abs(k - wF))]) # ????? what exactly happens here?
 
     return fF, fS
 

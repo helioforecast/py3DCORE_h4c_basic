@@ -25,6 +25,23 @@ def starmap(func, args):
 
 
 class ABC_SMC(BaseFitter):
+    
+    """
+    Fits a model to observations using "Approximate Bayesian Computation Monte Carlo
+    
+    Arguments:
+        *args:      Any
+        **kwargs:   Any
+    
+    Returns:
+        None
+    
+    Functions:
+        initialize
+        run
+        abc_smc_worker      
+    """
+    
     iter_i: int
 
     hist_eps: list
@@ -36,39 +53,81 @@ class ABC_SMC(BaseFitter):
 
     def initialize(self, *args: Any, **kwargs: Any) -> None:
         super(ABC_SMC, self).initialize(*args, **kwargs)
-
-        self.iter_i = 0
-        self.hist_eps = []
-        self.hist_time = []
+        """
+        Initializes the iterations, epsilon values and time.
+        Sets the following properties for self:
+        iter_i       keeps track of iterations
+        hist_eps     keeps track of epsilon values
+        hist_time    keeps track of time
+    
+        Arguments:
+            *args:      Any
+            **kwargs:   Any
+    
+        Returns:
+            None
+        """
+        self.iter_i = 0 # keeps track of iterations
+        self.hist_eps = [] # keeps track of epsilon values
+        self.hist_time = [] # keeps track of time
     
     def run(self, epsgoal=0.3, iter_min=10, iter_max=15, ensemble_size=512, reference_frame="HEEQ", **kwargs: Any) -> None:
-        logger = logging.getLogger(__name__)
+        """
+        Runs the fitting process.
+        Sets the following properties for self:
+            hist_eps_dim             Dimension of each eps (Number of observers?????)
+    
+        Arguments:
+            epsgoal          0.3     Epsilon to be reached during optimization
+            iter_min         10      Minimum iterations before epsgoal is checked
+            iter_max         15      Maximum iterations until fitting is interrupted
+            ensemble_size    512     ????? 
+            reference_frame  "HEEQ"  reference frame of coordinate system
+            *args            Any
+            **kwargs         Any
+    
+        Returns:
+            None
+        """
+        
+        logger = logging.getLogger(__name__) # used for logging
  
         # read kwargs
-        balanced_iterations = kwargs.pop("balanced_iterations", 3)
-        data_kwargs = kwargs.pop("data_kwargs", {})
-        eps_quantile = kwargs.pop("eps_quantile", 0.25)
-        kernel_mode = kwargs.pop("kernel_mode", "cm")
-        output = kwargs.get("output", None)
-        random_seed = kwargs.pop("random_seed", 42)
-        summary_type = kwargs.pop("summary_statistic", "norm_rmse")
-        time_offsets = kwargs.pop("time_offsets", [0])
+        balanced_iterations = kwargs.pop("balanced_iterations", 3) # ?????
+        data_kwargs = kwargs.pop("data_kwargs", {}) # kwargs to be used for the FittingData, usually not given
+        eps_quantile = kwargs.pop("eps_quantile", 0.25) # ?????
+        kernel_mode = kwargs.pop("kernel_mode", "cm") # ?????
+        output = kwargs.get("output", None) # ?????
+        random_seed = kwargs.pop("random_seed", 42) # ?????
+        summary_type = kwargs.pop("summary_statistic", "norm_rmse") # summary statistic used to measure the error of a fit
+        time_offsets = kwargs.pop("time_offsets", [0]) # ?????
 
-        jobs = kwargs.pop("jobs", 8)
-        workers = kwargs.pop("workers", multiprocessing.cpu_count())
+        jobs = kwargs.pop("jobs", 8) # number of jobs
+        workers = kwargs.pop("workers", multiprocessing.cpu_count()) # number of workers 
+        
+        # ????? What is the difference between workers and jobs?
 
-        mpool = multiprocessing.Pool(processes=workers)
-
-        data_obj = FittingData(self.observers, reference_frame)
-        data_obj.generate_noise(kwargs.get("noise_model", "psd"), kwargs.get("sampling_freq", 300), **data_kwargs)
+        mpool = multiprocessing.Pool(processes=workers) # initialize Pool for multiprocessing
+        
+        
+        # Fitting data comes from the module fitter.base.py 
+        
+        data_obj = FittingData(self.observers, reference_frame) 
+        data_obj.generate_noise(kwargs.get("noise_model", "psd"), kwargs.get("sampling_freq", 300), **data_kwargs) # noise is generated for the Fitting Data Object, function also comes from the module fitter.base.py 
 
         kill_flag = False
         pcount = 0
         timer_iter = None
-
+        
+        # Here the actual fitting loop starts
+        
         try:
             for iter_i in range(self.iter_i, iter_max):
-                    
+                
+                # We first check if the minimum number of 
+                # iterations is reached.If yes, we check if
+                # the target value for epsilon "epsgoal" is reached.
+                
                 if iter_i >= iter_min:
                     if self.hist_eps[-1] < epsgoal:
                         logger.info("fitting terminated, epsgoal reached: eps < %s", epsgoal) 
@@ -78,36 +137,54 @@ class ABC_SMC(BaseFitter):
                 logger.info("running iteration %i", iter_i)
                         
                 timer_iter = time.time()
+                
+                # ????? What does time_offset do? [0] by default
 
                 if iter_i >= len(time_offsets):
                     _time_offset = time_offsets[-1]
                 else:
                     _time_offset = time_offsets[iter_i]
                 
-                    
+                
+                # next, the data_kwargs, which are {} by default,
+                # are used to set self.data_dt, self.data_b, self.data_o, 
+                # self.data_m and self.data_l                  
 
                 data_obj.generate_data(_time_offset, **data_kwargs)
+                
+                # only gets executed during first iteration
 
                 if len(self.hist_eps) == 0:
-                    eps_init = data_obj.sumstat([np.zeros((1, 3))] * len(data_obj.data_b), use_mask=False)[0]
-                    self.hist_eps = [eps_init, eps_init * 0.98]
-                    self.hist_eps_dim = len(eps_init)
+                    eps_init = data_obj.sumstat([np.zeros((1, 3))] * len(data_obj.data_b), use_mask=False)[0] 
+                    # returns summary statistic for a vector of zeroes for each observer
+                    self.hist_eps = [eps_init, eps_init * 0.98] 
+                    #hist_eps gets set to the eps_init and 98% of it
+                    
+                    self.hist_eps_dim = len(eps_init) # ????? number of observers?
 
                     logger.info("initial eps_init = %s", self.hist_eps[-1])
                     
+                    # model kwargs are stored in a dictionary
+                    
                     model_obj_kwargs = dict(self.model_kwargs)  # type: ignore
+                    
+                    # the ensemble_size which was set in the model_kwargs gets replaced
+                    # by the argument set in the function directly. Why ??????
+                    
                     model_obj_kwargs["ensemble_size"] = ensemble_size
-                    model_obj = self.model(self.dt_0, **model_obj_kwargs)
+                    model_obj = self.model(self.dt_0, **model_obj_kwargs) # model gets initialized
 
-                sub_iter_i = 0
+                sub_iter_i = 0 # keeps track of subprocesses 
 
-                _random_seed = random_seed + 100000 * iter_i
-
+                _random_seed = random_seed + 100000 * iter_i # ??????
+                
+                
+                # worker_args get stored
                 worker_args = (iter_i, self.dt_0, self.model, self.model_kwargs, model_obj.iparams_arr, model_obj.iparams_weight, model_obj.iparams_kernel_decomp,
                             data_obj, summary_type, self.hist_eps[-1], kernel_mode)
 
                 logger.info("starting simulations")
-                _results = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)])
+                _results = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # starmap returns a function for all given arguments
                 total_runs = jobs * int(self.model_kwargs["ensemble_size"])  # type: ignore
 
                 # repeat until enough samples are collected
@@ -201,12 +278,33 @@ class ABC_SMC(BaseFitter):
 def abc_smc_worker(*args: Any) -> Tuple[np.ndarray, np.ndarray]:
     iter_i, dt_0, model_class, model_kwargs, old_iparams, old_weights, old_kernels, data_obj, summary_type, eps_value, kernel_mode, random_seed = args
 
+    """
+    Worker for ABC-SMC 
+    
+    Arguments:
+        iter_i              subcounter
+        dt_0                launch time
+        model_class         which model to use
+        model_kwargs        kwargs to use for the model
+        old_iparams         parameters from previous iteration
+        old_weights         weights from previous iteration
+        old_kernels         kernels from previous iteration
+        data_obj            Fitting Data
+        summary_type        summary statistic type
+        eps_value           epsilon value
+        kernel_mode         ????
+        random seed         ????
+        
+    Returns:
+        result              ????
+        error[accept_mask]  ????
+    """
     if iter_i == 0:
-        model_obj = model_class(dt_0, **model_kwargs)
-        model_obj.generator(random_seed=random_seed)
+        model_obj = model_class(dt_0, **model_kwargs) # model gets initialized with model kwargs
+        model_obj.generator(random_seed=random_seed) # generator is run to create the iparams array and the quaternions
     else:
         set_random_seed(random_seed)
-        model_obj = model_class(dt_0, **model_kwargs)
+        model_obj = model_class(dt_0, **model_kwargs)# model gets initialized with model kwargs
         model_obj.perturb_iparams(old_iparams, old_weights, old_kernels, kernel_mode=kernel_mode)
 
     # TODO: sort data_dt by time

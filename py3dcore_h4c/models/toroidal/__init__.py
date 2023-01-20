@@ -18,6 +18,26 @@ from .thin_torus import thin_torus_sq, thin_torus_qs, thin_torus_gh
 
 class ToroidalModel(SimulationBlackBox):
     """Implements the torus model.
+    
+    Sets the following properties for self:
+    mag_model                           model for magnetic field
+    shape_model                         model for cme shape
+    
+    Arguments:
+         dt_0                           launch time
+         ensemble_size                  ?????
+         iparams         dict = {}      initial parameters
+         shape_model     "thin_torus"   model for cme shape
+         mag_model       "gh"           model for magnetic field
+    
+    Returns:
+        None
+    
+    Functions:
+        propagator
+        simulator_mag
+        visualize_shape
+        
 
     Model Parameters
     ================
@@ -51,9 +71,12 @@ class ToroidalModel(SimulationBlackBox):
     shape_model: str
 
     def __init__(self, dt_0: Union[str, datetime.datetime], ensemble_size: int, iparams: dict = {}, shape_model: str = "thin_torus", mag_model: str = "gh", dtype: type = np.float32) -> None:
+        
+        # load model parameters
         with open(os.path.join(os.path.dirname(py3dcore_h4c.__file__), "models/toroidal/parameters.json")) as fh:
-            iparams_dict = json.load(fh)
-
+            iparams_dict = json.load(fh) 
+        
+        # replace model parameters if given
         for k, v in iparams.items():
             if k in iparams_dict:
                 iparams_dict[k].update(v)

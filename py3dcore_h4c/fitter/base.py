@@ -54,6 +54,23 @@ def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_fram
 
 
 class BaseFitter(object):
+    
+    """
+    Class(object) used for fitting.
+    
+    Arguments:
+        path   Optional     where to save
+        
+    Returns:
+        None
+        
+    Functions:
+        add_observer
+        initialize
+        save
+        load
+    """
+    
     dt_0: datetime.datetime
     locked: bool
     model: Type[SimulationBlackBox]
@@ -69,9 +86,41 @@ class BaseFitter(object):
             self.locked = False
 
     def add_observer(self, observer: str, dt: Union[str, datetime.datetime, Sequence[str], Sequence[datetime.datetime]], dt_s: Union[str, datetime.datetime], dt_e: Union[str, datetime.datetime], dt_shift: datetime.timedelta = None) -> None:        
-        self.observers.append([observer, sanitize_dt(dt), sanitize_dt(dt_s), sanitize_dt(dt_e), dt_shift])
+        
+        """
+        Appends an observer.
+    
+        Arguments:
+            observer          name of the observer
+            dt                datetime points to be used for fitting
+            dt_s              reference point prior to the fluxrope
+            dt_e              reference point after the fluxrope
+            dt_shift          ?????
+    
+        Returns:
+            None
+        """
+        
+        self.observers.append([observer, sanitize_dt(dt), sanitize_dt(dt_s), sanitize_dt(dt_e), dt_shift]) # append observer with sanitized datetime (HelioSat sanitize deals with different timezones)
 
     def initialize(self, dt_0: Union[str, datetime.datetime], model: Type[SimulationBlackBox], model_kwargs: dict = {}) -> None:
+        
+        """
+        Initializes the Fitter.
+        Sets the following properties for self:
+            dt_0              sanitized launch time
+            observers         empty list
+            reference_frame   reference frame to work in
+    
+        Arguments:
+            dt_0              launch time
+            model             fluxrope model
+            model_kwargs      dictionary containing all kwargs for the model
+    
+        Returns:
+            None
+        """
+        
         if self.locked:
             raise RuntimeError("is locked")
         
@@ -104,6 +153,28 @@ class BaseFitter(object):
 
 
 class FittingData(object):
+    
+    """
+    Class(object) to handle the data used for fitting.
+    Sets the following properties for self:
+        length                  length of list of observers
+        observers               list of observers
+        reference_frame         reference frame to work in
+    
+    Arguments:
+        observers               list of observers
+        reference_frame         reference frame to work in
+        
+    Returns:
+        None
+        
+    Functions:
+        add_noise
+        generate_noise
+        generate_data
+        sumstat
+    """
+    
     data_dt: List[np.ndarray]
     data_b: List[np.ndarray]
     data_o: List[np.ndarray]
@@ -150,6 +221,23 @@ class FittingData(object):
         return profiles
 
     def generate_noise(self, noise_model: str = "psd", sampling_freq: int = 300, **kwargs: Any) -> None:
+        
+    """
+    Generates noise according to the noise model.
+    Sets the following properties for self:
+        psd_dt                altered time axis for power spectrum
+        psd_fft               power spectrum
+        sampling_freq         sampling frequency
+        noise_model           model used to calculate noise
+    
+    Arguments:
+        noise_model    "psd"     model to use for generating noise (e.g. power spectrum distribution)
+        sampling_freq  300       sampling frequency of data
+        
+    Returns:
+        None
+    """
+            
         self.psd_dt = []
         self.psd_fft = []
         self.sampling_freq = sampling_freq
@@ -157,6 +245,7 @@ class FittingData(object):
         self.noise_model = noise_model
 
         if noise_model == "psd":
+        # get data for each observer
             for o in range(self.length):
                 observer, dt, dt_s, dt_e, _ = self.observers[o]
 
@@ -164,27 +253,53 @@ class FittingData(object):
 
                 _, data = observer_obj.get([dt_s, dt_e], "mag", reference_frame=self.reference_frame, sampling_freq=sampling_freq, use_cache=True, as_endpoints=True)
 
-                data[np.isnan(data)] = 0
+                data[np.isnan(data)] = 0 #set all nan values to 0
 
-                fF, fS = mag_fft(dt, data, sampling_freq=sampling_freq)
+                fF, fS = mag_fft(dt, data, sampling_freq=sampling_freq) # computes the mean power spectrum distribution
 
-                kdt = (len(fS) - 1) / (dt[-1].timestamp() - dt[0].timestamp())
-                fT = np.array([int((_.timestamp() - dt[0].timestamp()) * kdt) for _ in dt])
+                kdt = (len(fS) - 1) / (dt[-1].timestamp() - dt[0].timestamp()) # ????? the len of the powerspectrum divided by the difference between two timestamps
+                fT = np.array([int((_.timestamp() - dt[0].timestamp()) * kdt) for _ in dt]) # ????? altered time series
 
-                self.psd_dt.append(fT)
+                self.psd_dt.append(fT) # appends the altered time axis
                 self.psd_fft.append(fS)
+                # appends the power spectrum 
         else:
             raise NotImplementedError
 
     def generate_data(self, time_offset: Union[int, Sequence], **kwargs: Any) -> None:
+        
+    """
+    Generates data for each observer at the given times. 
+    Sets the following properties for self:
+        data_dt      all needed timesteps [dt_s, dt, dt_e]
+        data_b       magnetic field data for data_dt
+        data_o       trajectory of observers
+        data_m       mask for data_b with 1 for each point except first and last
+        data_l       length of data
+    
+    Arguments:
+        time_offset  ?????  
+        **kwargs     Any
+        
+    Returns:
+        None
+    """
+        
         self.data_dt = []
         self.data_b = []
         self.data_o = []
         self.data_m = []
         self.data_l = []
+        
+        # Each observer is treated separately
 
         for o in range(self.length):
+            
+            # The values of the observer are unpacked
+            
             observer, dt, dt_s, dt_e, dt_shift = self.observers[o]
+            
+            # The reference points are corrected by time_offset
 
             if hasattr(time_offset, "__len__"):
                 dt_s -= datetime.timedelta(hours=time_offset[o])  # type: ignore
@@ -192,15 +307,25 @@ class FittingData(object):
             else:
                 dt_s -= datetime.timedelta(hours=time_offset)  # type: ignore
                 dt_e += datetime.timedelta(hours=time_offset)  # type: ignore
-
+            # The observer object is created
+                        
             observer_obj = getattr(heliosat, observer)()
-
+            
+            # The according magnetic field data 
+            # for the fitting points is obtained
+            
             _, data = observer_obj.get(dt, "mag", reference_frame=self.reference_frame, use_cache=True, **kwargs)
-
-            dt_all = [dt_s] + dt + [dt_e]
-            trajectory = observer_obj.trajectory(dt_all, reference_frame=self.reference_frame)
+            
+            dt_all = [dt_s] + dt + [dt_e] # all time points
+            trajectory = observer_obj.trajectory(dt_all, reference_frame=self.reference_frame) # returns the spacecraft trajectory
+            # an array containing the data plus one additional 
+            # zero each at the beginning and the end is created
+            
             b_all = np.zeros((len(data) + 2, 3))
             b_all[1:-1] = data
+            
+            # the mask is created, a list containing 1] for each 
+            # data point and 0 for the first and last entry
             mask = [1] * len(b_all)
             mask[0] = 0
             mask[-1] = 0
@@ -214,7 +339,20 @@ class FittingData(object):
             self.data_m.extend(mask)
             self.data_l.append(len(data))
 
-    def sumstat(self, values: np.ndarray, stype: str = "norm_rmse", use_mask: bool = True) -> np.ndarray:
+    def sumstat(self, values: np.ndarray, stype: str = "norm_rmse", use_mask: bool = True) -> np.ndarray:   
+        
+    """
+    Returns the summary statistic comparing given values to the data object.
+    
+    Arguments:
+        values                   fitted values to compare with the data  
+        stype      "norm_rmse"   method to use for the summary statistic
+        use_mask   True          mask the data
+        
+    Returns:
+        sumstat                  Summary statistic for each observer
+    """
+    
         if use_mask:
             return sumstat(values, self.data_b, stype, mask=self.data_m, data_l=self.data_l, length=self.length)
         else:
