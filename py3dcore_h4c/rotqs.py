@@ -13,6 +13,20 @@ from typing import Optional, Iterable
 
 
 def generate_quaternions(arr: np.ndarray, qs_sx: np.ndarray, qs_xs: np.ndarray, indices: Optional[Iterable] = None) -> None:
+    
+    """
+    Function to generate quaternions. 
+    
+    Arguments:
+        arr              array (for example array of initial parameters)
+        qs_sx            empty array of size (ensemblesize, 4)
+        qs_xs            empty array of size (ensemblesize, 4)
+        indices          quaternion indices
+        
+    Returns:
+        None             ???? Why does this function not return anything?
+    """
+    
     if indices is None:
         # assume by default that propagation direction is stored in indices 1, 2 and 3
         indices = np.array([1, 2, 3])
@@ -20,13 +34,14 @@ def generate_quaternions(arr: np.ndarray, qs_sx: np.ndarray, qs_xs: np.ndarray, 
         indices = np.array(indices)
 
     (i1, i2, i3) = (indices[0], indices[1], indices[2]) # type: ignore
-    (lon, lat, inc) = (arr[:, i1], arr[:, i2], arr[:, i3])
+    (lon, lat, inc) = (arr[:, i1], arr[:, i2], arr[:, i3]) # extract propagation direction from initial parameters
 
     # generate standard axes vectors
     ux = np.array([0, 1.0, 0, 0])
     uy = np.array([0, 0, 1.0, 0])
     uz = np.array([0, 0, 0, 1.0])
-
+    
+    # creates new axis
     rlon = _numba_quaternion_create(lon, uz)
     rlat = _numba_quaternion_create(-lat, quaternion_rotate(uy, rlon))
     rinc = _numba_quaternion_create(

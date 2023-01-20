@@ -89,18 +89,35 @@ class ToroidalModel(SimulationBlackBox):
         self.shape_model = shape_model
     
     def propagator(self, dt_to: Union[str, datetime.datetime]) -> None:
+        
+    """
+    Runs the numba propagator and sets dt_t to dt_to
+    """
         _numba_propagator(self.dtype(sanitize_dt(dt_to).timestamp() - self.dt_0.timestamp()), self.iparams_arr, self.sparams_arr, self.sparams_arr)
 
         self.dt_t = dt_to
 
 
     def simulator_mag(self, pos: np.ndarray, out: np.ndarray) -> None:
+        
+    """
+    Simulates the magnetic field 
+        
+    Arguments:
+        pos         trajectory of observer
+        out         magnetic field 
+        
+    Returns:
+        None      
+    """
         _q_tmp = np.zeros((len(self.iparams_arr), 3))
-
+        
         if self.shape_model == "thin_torus":
+            # implement the thin torus model and rotate to s coordinates
             thin_torus_sq(pos, self.iparams_arr, self.sparams_arr, self.qs_sx, _q_tmp)
 
             if self.mag_model == "gh":
+                # implement the goldhoyle model
                 thin_torus_gh(_q_tmp, self.iparams_arr, self.sparams_arr, self.qs_xs, out)
             else:
                 raise NotImplementedError
@@ -129,8 +146,21 @@ class ToroidalModel(SimulationBlackBox):
     "void(float64, float64[:], float64[:], float64[:])"],
     '(), (j), (k) -> (k)', target="parallel")
 def _numba_propagator(t_offset: float, iparams: np.ndarray, _: np.ndarray, sparams: np.ndarray) -> None:
-    (t_i, _, _, _, d, _, r, v, _, n_a, n_b, b_i, bg_d, bg_v) = iparams
-
+    
+    """
+    Propagates the model.        
+    Arguments:
+        t_offset            correction of t 
+        iparams             initial parameters
+        sparams             state parameters
+        
+    Returns:
+        b_out               magnetic field values
+        s_out     None      state parameters
+    """
+        
+    (t_i, _, _, _, d, _, r, v, _, n_a, n_b, b_i, bg_d, bg_v) = iparams #collect iparams
+ 
     # rescale parameters
     bg_d = bg_d * 1e-7
     r = r * 695510
@@ -148,6 +178,7 @@ def _numba_propagator(t_offset: float, iparams: np.ndarray, _: np.ndarray, spara
     rho_0 = (rt - rho_1) / 2
     b_t = b_i * (2 * rho_0) ** (-n_b)
 
+    #store state parameters
     sparams[0] = vt
     sparams[1] = rho_0
     sparams[2] = rho_1

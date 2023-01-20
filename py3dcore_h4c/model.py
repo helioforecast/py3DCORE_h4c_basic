@@ -25,24 +25,24 @@ class SimulationBlackBox(object):
         
         iparams                initial parameters
         sparams                state parameters
-        ensemble_size          ??????
-        dtype                  ??????
+        ensemble_size          ?
+        dtype                  ?
         iparams_array          initial parameters for each ensemble member
-        iparams_kernel         ??????
-        iparams_weight         ??????
-        iparams_kernel_decomp  ??????
+        iparams_kernel         kernel to be used for perturbation
+        iparams_weight         weight to be assigned to each particle
+        iparams_kernel_decomp  ?
         sparams_arr            state parameters for each ensemble 
         
-        qs_sx                  ?????? to rotate from s to x
-        qs_xs                  ?????? to rotate from x to s
+        qs_sx                  quaternion to rotate from s to x
+        qs_xs                  quaternion to rotate from x to s
 
-        iparams_meta           ??????
+        iparams_meta           ?
         
     
     
     Arguments:
         dt_0                   launch time
-        ensemble_size          ?????
+        ensemble_size          ?
         iparams                initial parameters
         sparams                state parameters
          
@@ -154,31 +154,51 @@ class SimulationBlackBox(object):
             else:
                 raise NotImplementedError("parameter distribution \"{0!s}\" is not implemented".format(dist))
 
-        generate_quaternions(self.iparams_arr, self.qs_sx, self.qs_xs) #quaternions are generated to rotate from s to x and back
+        generate_quaternions(self.iparams_arr, self.qs_sx, self.qs_xs) # quaternions are generated to rotate from s to x and back
 
         self.dt_t = self.dt_0
 
     def propagator(self, dt_to: Union[str, datetime.datetime]) -> None:
+        # use propagator of model class
         raise NotImplementedError
 
     def simulator(self, dt: Union[str, datetime.datetime, Sequence[str], Sequence[datetime.datetime]], pos: Union[np.ndarray, Sequence[np.ndarray]], sparams: Optional[Sequence[int]] = None) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+        
+    """
+    Handles the distributions for each initial parameter and generates quaternions
+        
+    Arguments:
+        dt                  time axis for where to generate profiles
+        pos                 trajectory of observer
+        sparams   None      state parameters
+        
+    Returns:
+        b_out               magnetic field values
+        s_out     None      state parameters
+    """
+        
+        # obtain correct format of dt and pos 
         if isinstance(dt, datetime.datetime) or isinstance(dt, str):
             dt = [dt]  # type: ignore
             pos = [pos]
         elif (len(dt) > 1 and len(pos) == 1) or np.array(pos).ndim == 1:
             pos = [np.array(pos, dtype=self.dtype) for _ in range(len(dt))]
-
+        
+        # create empty array to fill with magnetic field values
         b_out = [np.empty((self.ensemble_size, 3), dtype=self.dtype) for _ in range(len(dt))]  # type: ignore
 
+        # create empty array to fill with state parameters
         if sparams and len(sparams) > 0:
             s_out = [np.empty((self.ensemble_size, len(sparams)), dtype=self.dtype) for _ in range(len(dt))]  # type: ignore
 
         for i in range(len(dt)):  # type: ignore
+            # propagate model to point i
             self.propagator(dt[i])  # type: ignore
+            # simulate magnetic field at point i
             self.simulator_mag(pos[i], b_out[i])
 
             if sparams and len(sparams) > 0:
-                s_out[i][:] = self.sparams_arr[i, sparams]
+                s_out[i][:] = self.sparams_arr[i, sparams] #store new sparams
         if sparams and len(sparams) > 0:
             return b_out, s_out
         else:
@@ -230,8 +250,23 @@ class SimulationBlackBox(object):
         self.iparams_weight /= np.sum(self.iparams_weight)
 
     def perturb_iparams(self, old_iparams: np.ndarray, old_weights: np.ndarray, old_kernels: np.ndarray, kernel_mode: str = "cm") -> None:
+        
+    """
+    Perturbs the iparams and generates quaternions. New iparams are directly stored in iparams_arr.
+    Sets the following properties for self:
+        dt_t              dt_0
+        
+    Arguments:
+        old_iparams                initial parameters during last iteration
+        old_weights                weight given to each particle (Beaumont et al. 2008) 
+        old_kernels                old kernel (covariance matrix of previous overall distribution)  
+        kernel_mode      "cm"      kernel mode for perturbing the iparams - covariance matrix
+        
+    Returns:
+        None
+    """
         if kernel_mode == "cm":
-            # perturb particles
+            # perturb kernel (a transition kernel based on M-nearest neighbours (Filippi et al. 2011) where the co-variance matrix is computed from only half of all particles)
             _numba_perturb_kernel_cm(self.iparams_arr, old_iparams, old_weights, old_kernels, self.iparams_meta)
         elif kernel_mode == "lcm":
             raise NotImplementedError
@@ -288,6 +323,18 @@ class SimulationBlackBox(object):
 
 @numba.njit(fastmath=True)
 def _numba_perturb_select_weights(size: np.ndarray, weights_old: np.ndarray) -> np.ndarray:
+    
+    """
+    Perturb weights to be assigned to each particle according to Beaumont et al. 2008. New weights are indirectly proportional to the transition probability given by the perturbation kernel.
+    
+    Arguments:
+        size            number of iparams to be perturbed
+        weights_old     weights used in the previous iteration
+        
+    Returns:
+        si              weights
+    """
+    
     r = np.random.rand(size)
     si = -np.ones((size,), dtype=np.int64)
 
@@ -307,7 +354,22 @@ def _numba_perturb_select_weights(size: np.ndarray, weights_old: np.ndarray) -> 
 
 @numba.njit(fastmath=True, parallel=False)
 def _numba_perturb_kernel_cm(iparams_new: np.ndarray, iparams_old: np.ndarray, weights_old: np.ndarray, kernel_lower: np.ndarray, meta: np.ndarray) -> None:
-    isel = _numba_perturb_select_weights(len(iparams_new), weights_old)
+    
+    """
+    We use a transition kernel based on M-nearest neighbours (Filippi et al. 2011) where the co-variance matrix is computed from only half of all particles from the previous iteration. 
+    
+    Arguments:
+        iparams_new      new initial parameters (self.iparams_arr)
+        iparams_old      old initial parameters
+        weights_old      weights used in the previous iteration
+        kernel_lower     kernel from previous iteration
+        meta             ?
+        
+    Returns:
+        None
+    """
+        
+    isel = _numba_perturb_select_weights(len(iparams_new), weights_old) # perturb the weights to be assigned to each particle
     #print("perturb start")
     for i in range(len(iparams_new)):
         si = isel[i]

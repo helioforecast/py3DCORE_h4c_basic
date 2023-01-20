@@ -75,13 +75,13 @@ class ABC_SMC(BaseFitter):
         """
         Runs the fitting process.
         Sets the following properties for self:
-            hist_eps_dim             Dimension of each eps (Number of observers?????)
+            hist_eps_dim             Dimension of each eps (Number of observers?)
     
         Arguments:
             epsgoal          0.3     Epsilon to be reached during optimization
             iter_min         10      Minimum iterations before epsgoal is checked
             iter_max         15      Maximum iterations until fitting is interrupted
-            ensemble_size    512     ????? 
+            ensemble_size    512     ? 
             reference_frame  "HEEQ"  reference frame of coordinate system
             *args            Any
             **kwargs         Any
@@ -93,19 +93,19 @@ class ABC_SMC(BaseFitter):
         logger = logging.getLogger(__name__) # used for logging
  
         # read kwargs
-        balanced_iterations = kwargs.pop("balanced_iterations", 3) # ?????
+        balanced_iterations = kwargs.pop("balanced_iterations", 3) # ?
         data_kwargs = kwargs.pop("data_kwargs", {}) # kwargs to be used for the FittingData, usually not given
-        eps_quantile = kwargs.pop("eps_quantile", 0.25) # ?????
-        kernel_mode = kwargs.pop("kernel_mode", "cm") # ?????
-        output = kwargs.get("output", None) # ?????
-        random_seed = kwargs.pop("random_seed", 42) # ?????
+        eps_quantile = kwargs.pop("eps_quantile", 0.25) # which quantile to use for the new eps
+        kernel_mode = kwargs.pop("kernel_mode", "cm") # kernel mode for perturbing the iparams - covariance matrix
+        output = kwargs.get("output", None) # ?
+        random_seed = kwargs.pop("random_seed", 42) # ?
         summary_type = kwargs.pop("summary_statistic", "norm_rmse") # summary statistic used to measure the error of a fit
-        time_offsets = kwargs.pop("time_offsets", [0]) # ?????
+        time_offsets = kwargs.pop("time_offsets", [0]) # ?
 
         jobs = kwargs.pop("jobs", 8) # number of jobs
         workers = kwargs.pop("workers", multiprocessing.cpu_count()) # number of workers 
         
-        # ????? What is the difference between workers and jobs?
+        #What is the difference between workers and jobs?
 
         mpool = multiprocessing.Pool(processes=workers) # initialize Pool for multiprocessing
         
@@ -138,7 +138,7 @@ class ABC_SMC(BaseFitter):
                         
                 timer_iter = time.time()
                 
-                # ????? What does time_offset do? [0] by default
+                # What does time_offset do? [0] by default
 
                 if iter_i >= len(time_offsets):
                     _time_offset = time_offsets[-1]
@@ -160,7 +160,7 @@ class ABC_SMC(BaseFitter):
                     self.hist_eps = [eps_init, eps_init * 0.98] 
                     #hist_eps gets set to the eps_init and 98% of it
                     
-                    self.hist_eps_dim = len(eps_init) # ????? number of observers?
+                    self.hist_eps_dim = len(eps_init) # number of observers?
 
                     logger.info("initial eps_init = %s", self.hist_eps[-1])
                     
@@ -169,14 +169,14 @@ class ABC_SMC(BaseFitter):
                     model_obj_kwargs = dict(self.model_kwargs)  # type: ignore
                     
                     # the ensemble_size which was set in the model_kwargs gets replaced
-                    # by the argument set in the function directly. Why ??????
+                    # by the argument set in the function directly.
                     
                     model_obj_kwargs["ensemble_size"] = ensemble_size
                     model_obj = self.model(self.dt_0, **model_obj_kwargs) # model gets initialized
 
                 sub_iter_i = 0 # keeps track of subprocesses 
 
-                _random_seed = random_seed + 100000 * iter_i # ??????
+                _random_seed = random_seed + 100000 * iter_i # ?
                 
                 
                 # worker_args get stored
@@ -185,13 +185,15 @@ class ABC_SMC(BaseFitter):
 
                 logger.info("starting simulations")
                 _results = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # starmap returns a function for all given arguments
+                
+                # the total number of runs depends on the ensemble size set in the model kwargs and the number of jobs
                 total_runs = jobs * int(self.model_kwargs["ensemble_size"])  # type: ignore
 
                 # repeat until enough samples are collected
                 while True:
-                    pcounts = [len(r[1]) for r in _results]
-                    _pcount = sum(pcounts)
-                    dt_pcount = _pcount - pcount
+                    pcounts = [len(r[1]) for r in _results] # number of particles collected per job 
+                    _pcount = sum(pcounts) # number of particles collected in total
+                    dt_pcount = _pcount - pcount # number of particles collected in current iteration
                     pcount = _pcount
 
                     particles_temp = np.zeros((pcount, model_obj.iparams_arr.shape[1]), model_obj.dtype)
@@ -208,7 +210,7 @@ class ABC_SMC(BaseFitter):
 
                     _random_seed = random_seed + 100000 * iter_i + 1000 * (sub_iter_i + 1)
 
-                    _results_ext = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)])
+                    _results_ext = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # runs the abc_smc 
                     _results.extend(_results_ext)
 
                     sub_iter_i += 1
@@ -292,30 +294,30 @@ def abc_smc_worker(*args: Any) -> Tuple[np.ndarray, np.ndarray]:
         data_obj            Fitting Data
         summary_type        summary statistic type
         eps_value           epsilon value
-        kernel_mode         ????
-        random seed         ????
+        kernel_mode         kernel mode to be used for perturbation (usually covariance matrix)
+        random seed         ?
         
     Returns:
-        result              ????
-        error[accept_mask]  ????
+        result              accepted iparams
+        error[accept_mask]  error of accepted iparams
     """
     if iter_i == 0:
         model_obj = model_class(dt_0, **model_kwargs) # model gets initialized with model kwargs
         model_obj.generator(random_seed=random_seed) # generator is run to create the iparams array and the quaternions
     else:
-        set_random_seed(random_seed)
+        set_random_seed(random_seed) # random seed gets set
         model_obj = model_class(dt_0, **model_kwargs)# model gets initialized with model kwargs
-        model_obj.perturb_iparams(old_iparams, old_weights, old_kernels, kernel_mode=kernel_mode)
+        model_obj.perturb_iparams(old_iparams, old_weights, old_kernels, kernel_mode=kernel_mode) #iparams are perturbed
 
     # TODO: sort data_dt by time
-
+thin torus model and rotate to q coordinates
     # sort
-    sort_index = np.argsort([_.timestamp() for _ in data_obj.data_dt])
+    sort_index = np.argsort([_.timestamp() for _ in data_obj.data_dt]) # the index is sorted by time (shouldn't it already be sorted by default?)
 
     # generate synthetic profiles
-    profiles = np.array(model_obj.simulator(np.array(data_obj.data_dt)[sort_index], np.array(data_obj.data_o)[sort_index])[0], dtype=model_obj.dtype)
+    profiles = np.array(model_obj.simulator(np.array(data_obj.data_dt)[sort_index], np.array(data_obj.data_o)[sort_index])[0], dtype=model_obj.dtype) #obtain magnetic field
 
-    # resort profiles
+    # resort profiles ? why
     sort_index_rev = np.argsort(sort_index)
     profiles = profiles[sort_index_rev]
 
@@ -323,9 +325,11 @@ def abc_smc_worker(*args: Any) -> Tuple[np.ndarray, np.ndarray]:
 
     # generate synthetic noise
     profiles = data_obj.add_noise(profiles)
-
+    
+    #calculate the error for each ensemble member and set the eps to inf if magnetic field at reference points is nonzero 
     error = data_obj.sumstat(profiles, stype=summary_type, use_mask=True)
-
+    
+    # accept all ensemble members for which the error is lower than the eps
     accept_mask = np.all(error < eps_value, axis=1)
 
     result = model_obj.iparams_arr[accept_mask]
