@@ -25,7 +25,7 @@ class ToroidalModel(SimulationBlackBox):
     
     Arguments:
          dt_0                           launch time
-         ensemble_size                  ?????
+         ensemble_size                  number of particles to be accepted
          iparams         dict = {}      initial parameters
          shape_model     "thin_torus"   model for cme shape
          mag_model       "gh"           model for magnetic field
@@ -90,9 +90,9 @@ class ToroidalModel(SimulationBlackBox):
     
     def propagator(self, dt_to: Union[str, datetime.datetime]) -> None:
         
-    """
-    Runs the numba propagator and sets dt_t to dt_to
-    """
+        """
+        Runs the numba propagator and sets dt_t to dt_to
+        """
         _numba_propagator(self.dtype(sanitize_dt(dt_to).timestamp() - self.dt_0.timestamp()), self.iparams_arr, self.sparams_arr, self.sparams_arr)
 
         self.dt_t = dt_to
@@ -100,16 +100,16 @@ class ToroidalModel(SimulationBlackBox):
 
     def simulator_mag(self, pos: np.ndarray, out: np.ndarray) -> None:
         
-    """
-    Simulates the magnetic field 
-        
-    Arguments:
-        pos         trajectory of observer
-        out         magnetic field 
-        
-    Returns:
-        None      
-    """
+        """
+        Simulates the magnetic field 
+
+        Arguments:
+            pos         trajectory of observer
+            out         magnetic field 
+
+        Returns:
+            None      
+        """
         _q_tmp = np.zeros((len(self.iparams_arr), 3))
         
         if self.shape_model == "thin_torus":

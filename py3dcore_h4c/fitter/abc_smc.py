@@ -27,7 +27,7 @@ def starmap(func, args):
 class ABC_SMC(BaseFitter):
     
     """
-    Fits a model to observations using "Approximate Bayesian Computation Monte Carlo
+    Fits a model to observations using "Approximate Bayesian Computation Monte Carlo"
     
     Arguments:
         *args:      Any
@@ -81,7 +81,7 @@ class ABC_SMC(BaseFitter):
             epsgoal          0.3     Epsilon to be reached during optimization
             iter_min         10      Minimum iterations before epsgoal is checked
             iter_max         15      Maximum iterations until fitting is interrupted
-            ensemble_size    512     ? 
+            ensemble_size    512     Number of particles to be accepted 
             reference_frame  "HEEQ"  reference frame of coordinate system
             *args            Any
             **kwargs         Any
@@ -93,12 +93,12 @@ class ABC_SMC(BaseFitter):
         logger = logging.getLogger(__name__) # used for logging
  
         # read kwargs
-        balanced_iterations = kwargs.pop("balanced_iterations", 3) # ?
+        balanced_iterations = kwargs.pop("balanced_iterations", 3) # number of iterations before eps gets set to eps_max?
         data_kwargs = kwargs.pop("data_kwargs", {}) # kwargs to be used for the FittingData, usually not given
         eps_quantile = kwargs.pop("eps_quantile", 0.25) # which quantile to use for the new eps
         kernel_mode = kwargs.pop("kernel_mode", "cm") # kernel mode for perturbing the iparams - covariance matrix
-        output = kwargs.get("output", None) # ?
-        random_seed = kwargs.pop("random_seed", 42) # ?
+        output = kwargs.get("output", None) # If output is set, results are saved to a file
+        random_seed = kwargs.pop("random_seed", 42) # set random seed to ensure reproducible results
         summary_type = kwargs.pop("summary_statistic", "norm_rmse") # summary statistic used to measure the error of a fit
         time_offsets = kwargs.pop("time_offsets", [0]) # ?
 
@@ -176,7 +176,7 @@ class ABC_SMC(BaseFitter):
 
                 sub_iter_i = 0 # keeps track of subprocesses 
 
-                _random_seed = random_seed + 100000 * iter_i # ?
+                _random_seed = random_seed + 100000 * iter_i # set random seed to ensure reproducible results
                 
                 
                 # worker_args get stored
@@ -194,26 +194,31 @@ class ABC_SMC(BaseFitter):
                     pcounts = [len(r[1]) for r in _results] # number of particles collected per job 
                     _pcount = sum(pcounts) # number of particles collected in total
                     dt_pcount = _pcount - pcount # number of particles collected in current iteration
-                    pcount = _pcount
-
+                    pcount = _pcount # particle count gets updated
+                    
+                    # iparams and according errors get stored in array. Why initialize zero arrays every iteration? 
                     particles_temp = np.zeros((pcount, model_obj.iparams_arr.shape[1]), model_obj.dtype)
                     epses_temp = np.zeros((pcount, self.hist_eps_dim), model_obj.dtype)
 
                     for i in range(0, len(_results)):
-                        particles_temp[sum(pcounts[:i]):sum(pcounts[:i + 1])] = _results[i][0]
-                        epses_temp[sum(pcounts[:i]):sum(pcounts[:i + 1])] = _results[i][1]
+                        particles_temp[sum(pcounts[:i]):sum(pcounts[:i + 1])] = _results[i][0] # results of current iteration are stored
+                        epses_temp[sum(pcounts[:i]):sum(pcounts[:i + 1])] = _results[i][1] # errors of current iteration are stored
 
                     logger.info("step %i:%i with (%i/%i) particles", iter_i, sub_iter_i, pcount, ensemble_size)
 
-                    if pcount > ensemble_size:
+                    if pcount > ensemble_size: 
                         break
 
+                    # if ensemble size isn't reached, continue
+                    # random seed gets updated
                     _random_seed = random_seed + 100000 * iter_i + 1000 * (sub_iter_i + 1)
 
-                    _results_ext = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # runs the abc_smc 
-                    _results.extend(_results_ext)
+                    _results_ext = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # runs the abc_smc, why use different random seed for each job?
+                    _results.extend(_results_ext) #results get appended to _results
 
                     sub_iter_i += 1
+                    
+                    # keep track of total number of runs
                     total_runs += jobs * int(self.model_kwargs["ensemble_size"])  # type: ignore
 
                     if pcount == 0:
@@ -221,25 +226,29 @@ class ABC_SMC(BaseFitter):
                         kill_flag = True
                         break
                         
-                if iter_i == (iter_min-1):
+                if iter_i == (iter_max-1):
                     logger.info("fitting terminated, iter_max reached: %i", iter_max)
+                    kill_flag = True
 
                 if kill_flag:
                     break
 
-                if pcount > ensemble_size:
+                if pcount > ensemble_size: # no additional particles are kept
                     particles_temp = particles_temp[:ensemble_size]
 
+                    
+                # if we're in the first iteration, the weights and kernels have to be initialized. Otherwise, they're updated. 
                 if iter_i == 0:
-                    model_obj.update_iparams(particles_temp, update_weights_kernels=False, kernel_mode=kernel_mode)
-                    model_obj.iparams_weight = np.ones((ensemble_size,), dtype=model_obj.dtype) / ensemble_size
+                    model_obj.update_iparams(particles_temp, update_weights_kernels=False, kernel_mode=kernel_mode) # replace self.iparams_arr by particles_temp
+                    model_obj.iparams_weight = np.ones((ensemble_size,), dtype=model_obj.dtype) / ensemble_size 
                     model_obj.update_kernels(kernel_mode=kernel_mode)
                 else:
                     model_obj.update_iparams(particles_temp, update_weights_kernels=True, kernel_mode=kernel_mode)
 
                 if isinstance(eps_quantile, float):
-                    new_eps = np.quantile(epses_temp, eps_quantile, axis=0)
+                    new_eps = np.quantile(epses_temp, eps_quantile, axis=0) # epsilon gets adaoted based on quantiles. 
 
+                    # after the first couple of iterations, the new eps gets simply set to the its maximum value instead of choosing a different eps for each observer?
                     if balanced_iterations > iter_i:
                         new_eps[:] = np.max(new_eps)
                     
@@ -260,8 +269,9 @@ class ABC_SMC(BaseFitter):
                             iter_i, ensemble_size, total_runs / 1e6, time.time() - timer_iter,
                             time.strftime("%Hh %Mm %Ss", time.gmtime(np.sum(self.hist_time))))
 
-                self.iter_i = iter_i + 1
-
+                self.iter_i = iter_i + 1 # iter_i gets updated
+                
+                # save output to file 
                 if output:
                     output_file = os.path.join(output, "{0:02d}.pickle".format(self.iter_i - 1))
 
@@ -274,7 +284,7 @@ class ABC_SMC(BaseFitter):
                     self.save(output_file, **extra_args)
         finally:
             mpool.close()
-            mpool.join()
+            mpool.join()  # close the multiprocessing
 
 
 def abc_smc_worker(*args: Any) -> Tuple[np.ndarray, np.ndarray]:
@@ -295,7 +305,7 @@ def abc_smc_worker(*args: Any) -> Tuple[np.ndarray, np.ndarray]:
         summary_type        summary statistic type
         eps_value           epsilon value
         kernel_mode         kernel mode to be used for perturbation (usually covariance matrix)
-        random seed         ?
+        random seed         set random seed to ensure reproducible results
         
     Returns:
         result              accepted iparams
@@ -310,7 +320,6 @@ def abc_smc_worker(*args: Any) -> Tuple[np.ndarray, np.ndarray]:
         model_obj.perturb_iparams(old_iparams, old_weights, old_kernels, kernel_mode=kernel_mode) #iparams are perturbed
 
     # TODO: sort data_dt by time
-thin torus model and rotate to q coordinates
     # sort
     sort_index = np.argsort([_.timestamp() for _ in data_obj.data_dt]) # the index is sorted by time (shouldn't it already be sorted by default?)
 

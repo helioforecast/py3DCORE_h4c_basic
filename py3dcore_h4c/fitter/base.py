@@ -15,15 +15,33 @@ from typing import Any, List, Optional, Sequence, Type, Union
 
 
 def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_frame: str = "HCI", reference_frame_to: str = "HCI", perc: float = 0.95, max_index=None) -> np.ndarray:
+    
+    """
+    Generates an ensemble from a Fitter object.
+    
+    Arguments:
+        path                where to load from
+        dt                  time axis used for fitting
+        reference_frame     reference frame used for fitter object
+        reference_frame_to  reference frame for output data
+        perc                ?
+        max_index           ?
+    Returns:
+        ensemble_data 
+    """
+    
     observers = BaseFitter(path).observers
     ensemble_data = []
     
 
     for (observer, _, _, _, _) in observers:
-        ftobj = BaseFitter(path)
-        observer_obj = getattr(heliosat, observer)()
+        ftobj = BaseFitter(path) # load Fitter from path
+        observer_obj = getattr(heliosat, observer)() # get observer obj
+        
+        # simulate flux ropes using iparams from loaded fitter
         ensemble = np.squeeze(np.array(ftobj.model_obj.simulator(dt, observer_obj.trajectory(dt, reference_frame=reference_frame))[0]))
-
+        
+        # how much to keep of the generated ensemble?
         if max_index is None:
             max_index =  ensemble.shape[1]
 
@@ -54,16 +72,15 @@ def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_fram
 
 
 class BaseFitter(object):
-    
     """
     Class(object) used for fitting.
-    
+
     Arguments:
         path   Optional     where to save
-        
+
     Returns:
         None
-        
+
     Functions:
         add_observer
         initialize
@@ -95,7 +112,7 @@ class BaseFitter(object):
             dt                datetime points to be used for fitting
             dt_s              reference point prior to the fluxrope
             dt_e              reference point after the fluxrope
-            dt_shift          ?????
+            dt_shift          ?
     
         Returns:
             None
@@ -222,21 +239,22 @@ class FittingData(object):
 
     def generate_noise(self, noise_model: str = "psd", sampling_freq: int = 300, **kwargs: Any) -> None:
         
-    """
-    Generates noise according to the noise model.
-    Sets the following properties for self:
-        psd_dt                altered time axis for power spectrum
-        psd_fft               power spectrum
-        sampling_freq         sampling frequency
-        noise_model           model used to calculate noise
-    
-    Arguments:
-        noise_model    "psd"     model to use for generating noise (e.g. power spectrum distribution)
-        sampling_freq  300       sampling frequency of data
-        
-    Returns:
-        None
-    """
+
+        """
+        Generates noise according to the noise model.
+        Sets the following properties for self:
+            psd_dt                altered time axis for power spectrum
+            psd_fft               power spectrum
+            sampling_freq         sampling frequency
+            noise_model           model used to calculate noise
+
+        Arguments:
+            noise_model    "psd"     model to use for generating noise (e.g. power spectrum distribution)
+            sampling_freq  300       sampling frequency of data
+
+        Returns:
+            None
+        """
             
         self.psd_dt = []
         self.psd_fft = []
@@ -257,8 +275,8 @@ class FittingData(object):
 
                 fF, fS = mag_fft(dt, data, sampling_freq=sampling_freq) # computes the mean power spectrum distribution
 
-                kdt = (len(fS) - 1) / (dt[-1].timestamp() - dt[0].timestamp()) # ????? the len of the powerspectrum divided by the difference between two timestamps
-                fT = np.array([int((_.timestamp() - dt[0].timestamp()) * kdt) for _ in dt]) # ????? altered time series
+                kdt = (len(fS) - 1) / (dt[-1].timestamp() - dt[0].timestamp()) # ? the len of the powerspectrum divided by the difference between two timestamps
+                fT = np.array([int((_.timestamp() - dt[0].timestamp()) * kdt) for _ in dt]) # ? altered time series
 
                 self.psd_dt.append(fT) # appends the altered time axis
                 self.psd_fft.append(fS)
@@ -268,22 +286,22 @@ class FittingData(object):
 
     def generate_data(self, time_offset: Union[int, Sequence], **kwargs: Any) -> None:
         
-    """
-    Generates data for each observer at the given times. 
-    Sets the following properties for self:
-        data_dt      all needed timesteps [dt_s, dt, dt_e]
-        data_b       magnetic field data for data_dt
-        data_o       trajectory of observers
-        data_m       mask for data_b with 1 for each point except first and last
-        data_l       length of data
-    
-    Arguments:
-        time_offset  ?????  
-        **kwargs     Any
-        
-    Returns:
-        None
-    """
+        """
+        Generates data for each observer at the given times. 
+        Sets the following properties for self:
+            data_dt      all needed timesteps [dt_s, dt, dt_e]
+            data_b       magnetic field data for data_dt
+            data_o       trajectory of observers
+            data_m       mask for data_b with 1 for each point except first and last
+            data_l       length of data
+
+        Arguments:
+            time_offset  ?  
+            **kwargs     Any
+
+        Returns:
+            None
+        """
         
         self.data_dt = []
         self.data_b = []
@@ -341,17 +359,17 @@ class FittingData(object):
 
     def sumstat(self, values: np.ndarray, stype: str = "norm_rmse", use_mask: bool = True) -> np.ndarray:   
         
-    """
-    Returns the summary statistic comparing given values to the data object.
-    
-    Arguments:
-        values                   fitted values to compare with the data  
-        stype      "norm_rmse"   method to use for the summary statistic
-        use_mask   True          mask the data
-        
-    Returns:
-        sumstat                  Summary statistic for each observer
-    """
+        """
+        Returns the summary statistic comparing given values to the data object.
+
+        Arguments:
+            values                   fitted values to compare with the data  
+            stype      "norm_rmse"   method to use for the summary statistic
+            use_mask   True          mask the data
+
+        Returns:
+            sumstat                  Summary statistic for each observer
+        """
     
         if use_mask:
             return sumstat(values, self.data_b, stype, mask=self.data_m, data_l=self.data_l, length=self.length)

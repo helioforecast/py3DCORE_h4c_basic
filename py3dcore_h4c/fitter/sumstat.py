@@ -71,18 +71,17 @@ def sumstat(values: np.ndarray, reference: np.ndarray, stype: str = "norm_rmse",
 
 def rmse(values: np.ndarray, reference: np.ndarray, mask: Optional[np.ndarray] = None) -> np.ndarray:
     rmse = np.zeros(len(values[0]))
-    
-     """
+    """
     Returns the rmse of values to reference.
-    
+
     Arguments:
         values       fitted values
         reference    data
         mask
-        
+
     Returns:
         rmse         root mean squared error
-    """
+    """     
 
     if mask is not None:
         for i in range(len(reference)):
