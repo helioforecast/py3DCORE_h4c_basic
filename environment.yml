@@ -1,4 +1,0 @@
-name: py3dcore
-channels:
-  - defaults
-prefix: /Users/uteamerstorfer/miniconda3/envs/py3dcore
