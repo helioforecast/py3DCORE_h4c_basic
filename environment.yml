@@ -1,0 +1,4 @@
+name: py3dcore_h4c
+channels:
+  - defaults
+prefix: /Users/uteamerstorfer/miniconda3/envs/py3dcore_h4c
