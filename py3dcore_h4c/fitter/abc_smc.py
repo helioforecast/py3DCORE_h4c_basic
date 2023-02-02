@@ -106,8 +106,7 @@ class ABC_SMC(BaseFitter):
         workers = kwargs.pop("workers", multiprocessing.cpu_count()) # number of workers 
         
         #What is the difference between workers and jobs?
-
-        mpool = multiprocessing.Pool(processes=workers) # initialize Pool for multiprocessing
+        mpool = multiprocessing.Pool(processes=workers) # initialize Pool for multiprocessing        
         
         
         # Fitting data comes from the module fitter.base.py 
@@ -184,7 +183,8 @@ class ABC_SMC(BaseFitter):
                             data_obj, summary_type, self.hist_eps[-1], kernel_mode)
 
                 logger.info("starting simulations")
-                _results = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # starmap returns a function for all given arguments
+                # _results = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) #
+                _results = mpool.starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # starmap returns a function for all given arguments
                 
                 # the total number of runs depends on the ensemble size set in the model kwargs and the number of jobs
                 total_runs = jobs * int(self.model_kwargs["ensemble_size"])  # type: ignore
@@ -213,7 +213,8 @@ class ABC_SMC(BaseFitter):
                     # random seed gets updated
                     _random_seed = random_seed + 100000 * iter_i + 1000 * (sub_iter_i + 1)
 
-                    _results_ext = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # runs the abc_smc, why use different random seed for each job?
+                    # _results_ext = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # runs the abc_smc, why use different random seed for each job?
+                    _results_ext = mpool.starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # runs the abc_smc, why use different random seed for each job?
                     _results.extend(_results_ext) #results get appended to _results
 
                     sub_iter_i += 1
