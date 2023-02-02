@@ -24,8 +24,8 @@ def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_fram
         dt                  time axis used for fitting
         reference_frame     reference frame used for fitter object
         reference_frame_to  reference frame for output data
-        perc                ?
-        max_index           ?
+        perc                percentage of quantile to be used
+        max_index           how much of ensemble is kept
     Returns:
         ensemble_data 
     """
@@ -41,7 +41,7 @@ def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_fram
         # simulate flux ropes using iparams from loaded fitter
         ensemble = np.squeeze(np.array(ftobj.model_obj.simulator(dt, observer_obj.trajectory(dt, reference_frame=reference_frame))[0]))
         
-        # how much to keep of the generated ensemble?
+        # how much to keep of the generated ensemble
         if max_index is None:
             max_index =  ensemble.shape[1]
 
@@ -112,7 +112,7 @@ class BaseFitter(object):
             dt                datetime points to be used for fitting
             dt_s              reference point prior to the fluxrope
             dt_e              reference point after the fluxrope
-            dt_shift          ?
+            dt_shift          datetime can be shifted
     
         Returns:
             None
@@ -275,8 +275,8 @@ class FittingData(object):
 
                 fF, fS = mag_fft(dt, data, sampling_freq=sampling_freq) # computes the mean power spectrum distribution
 
-                kdt = (len(fS) - 1) / (dt[-1].timestamp() - dt[0].timestamp()) # ? the len of the powerspectrum divided by the difference between two timestamps
-                fT = np.array([int((_.timestamp() - dt[0].timestamp()) * kdt) for _ in dt]) # ? altered time series
+                kdt = (len(fS) - 1) / (dt[-1].timestamp() - dt[0].timestamp()) 
+                fT = np.array([int((_.timestamp() - dt[0].timestamp()) * kdt) for _ in dt]) 
 
                 self.psd_dt.append(fT) # appends the altered time axis
                 self.psd_fft.append(fS)
@@ -296,7 +296,7 @@ class FittingData(object):
             data_l       length of data
 
         Arguments:
-            time_offset  ?  
+            time_offset  shift timeseries for observer   
             **kwargs     Any
 
         Returns:

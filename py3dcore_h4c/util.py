@@ -54,10 +54,10 @@ def mag_fft(dt: Sequence[datetime.datetime], bdt: np.ndarray, sampling_freq: int
         
     Returns:
         fF                array containing the sample frequencies
-        fS                mean power spectrum ?????
+        fS                mean power spectrum 
     """
     
-    n_s = int(((dt[-1] - dt[0]).total_seconds() / 3600) - 1) # ????? sampling frequency in hours - 1
+    n_s = int(((dt[-1] - dt[0]).total_seconds() / 3600) - 1) 
     n_perseg = np.min([len(bdt), 256]) # gives the length of the dataframe if it is larger than 256, otherwise 256
 
     # the scipy function detrend removes any linear trend along a given axis
@@ -80,7 +80,7 @@ def mag_fft(dt: Sequence[datetime.datetime], bdt: np.ndarray, sampling_freq: int
 
     for i in range(len(fF)):
         k = np.abs(fF[i])
-        fS[i] = np.sqrt(wS[np.argmin(np.abs(k - wF))]) # ????? what exactly happens here?
+        fS[i] = np.sqrt(wS[np.argmin(np.abs(k - wF))]) 
 
     return fF, fS
 

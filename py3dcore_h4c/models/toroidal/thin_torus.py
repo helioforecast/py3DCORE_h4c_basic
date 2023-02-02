@@ -43,7 +43,7 @@ def thin_torus_sq(s: np.ndarray, iparams: np.ndarray, sparams: np.ndarray, q_sx:
         s         trajectory of observer
         iparams   initial parameters array
         sparams   state parameters array
-        q_sx      quaternions to rotate from s to x ? was never returned though
+        q_sx      quaternions to rotate from s to x 
         q         array with zeros of shape (len(iparams_arr),3)
         
     Returns:
@@ -137,7 +137,7 @@ def thin_torus_gh(q: np.ndarray, iparams: np.ndarray, sparams: np.ndarray, q_xs:
         q              array of shape (len(self.iparams_arr),3) containing zeros 
         iparams        initial parameter array
         sparams        state parameter array
-        q_xs           quaternion to rotate from x to s ? was never returned though 
+        q_xs           quaternion to rotate from x to s 
         b              out mag field
     
     Returns:

@@ -75,7 +75,7 @@ class ABC_SMC(BaseFitter):
         """
         Runs the fitting process.
         Sets the following properties for self:
-            hist_eps_dim             Dimension of each eps (Number of observers?)
+            hist_eps_dim             Dimension of each eps (Number of observers)
     
         Arguments:
             epsgoal          0.3     Epsilon to be reached during optimization
@@ -93,20 +93,22 @@ class ABC_SMC(BaseFitter):
         logger = logging.getLogger(__name__) # used for logging
  
         # read kwargs
-        balanced_iterations = kwargs.pop("balanced_iterations", 3) # number of iterations before eps gets set to eps_max?
+        balanced_iterations = kwargs.pop("balanced_iterations", 3) # number of iterations before eps gets set to eps_max to balance for multiple observersx
         data_kwargs = kwargs.pop("data_kwargs", {}) # kwargs to be used for the FittingData, usually not given
         eps_quantile = kwargs.pop("eps_quantile", 0.25) # which quantile to use for the new eps
         kernel_mode = kwargs.pop("kernel_mode", "cm") # kernel mode for perturbing the iparams - covariance matrix
         output = kwargs.get("output", None) # If output is set, results are saved to a file
         random_seed = kwargs.pop("random_seed", 42) # set random seed to ensure reproducible results
         summary_type = kwargs.pop("summary_statistic", "norm_rmse") # summary statistic used to measure the error of a fit
-        time_offsets = kwargs.pop("time_offsets", [0]) # ?
+        time_offsets = kwargs.pop("time_offsets", [0]) # value used to correct arrival times at observers
 
-        jobs = kwargs.pop("jobs", 8) # number of jobs
-        workers = kwargs.pop("workers", multiprocessing.cpu_count()) # number of workers 
+        workers = kwargs.pop("workers", multiprocessing.cpu_count()-1) # number of workers 
+        jobs = kwargs.pop("jobs", workers) # number of jobs
+        use_multiprocessing = kwargs.pop("use_multiprocessing", False) # Whether to use multiprocessing 
         
-        #What is the difference between workers and jobs?
-        mpool = multiprocessing.Pool(processes=workers) # initialize Pool for multiprocessing        
+        
+
+        mpool = multiprocessing.Pool(processes=workers) # initialize Pool for multiprocessing
         
         
         # Fitting data comes from the module fitter.base.py 
@@ -137,7 +139,7 @@ class ABC_SMC(BaseFitter):
                         
                 timer_iter = time.time()
                 
-                # What does time_offset do? [0] by default
+                # correct observer arrival times
 
                 if iter_i >= len(time_offsets):
                     _time_offset = time_offsets[-1]
@@ -159,17 +161,13 @@ class ABC_SMC(BaseFitter):
                     self.hist_eps = [eps_init, eps_init * 0.98] 
                     #hist_eps gets set to the eps_init and 98% of it
                     
-                    self.hist_eps_dim = len(eps_init) # number of observers?
+                    self.hist_eps_dim = len(eps_init) # number of observers
 
                     logger.info("initial eps_init = %s", self.hist_eps[-1])
                     
                     # model kwargs are stored in a dictionary
                     
                     model_obj_kwargs = dict(self.model_kwargs)  # type: ignore
-                    
-                    # the ensemble_size which was set in the model_kwargs gets replaced
-                    # by the argument set in the function directly.
-                    
                     model_obj_kwargs["ensemble_size"] = ensemble_size
                     model_obj = self.model(self.dt_0, **model_obj_kwargs) # model gets initialized
 
@@ -183,8 +181,14 @@ class ABC_SMC(BaseFitter):
                             data_obj, summary_type, self.hist_eps[-1], kernel_mode)
 
                 logger.info("starting simulations")
-                # _results = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) #
-                _results = mpool.starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # starmap returns a function for all given arguments
+                
+                if use_multiprocessing == True:
+                    logger.info("multiprocessing is used")
+                    _results = mpool.starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # starmap returns a function for all given arguments
+                else:
+                    logger.info("multiprocessing is not used")
+                    _results = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # starmap returns a function for all given arguments
+                    
                 
                 # the total number of runs depends on the ensemble size set in the model kwargs and the number of jobs
                 total_runs = jobs * int(self.model_kwargs["ensemble_size"])  # type: ignore
@@ -196,7 +200,7 @@ class ABC_SMC(BaseFitter):
                     dt_pcount = _pcount - pcount # number of particles collected in current iteration
                     pcount = _pcount # particle count gets updated
                     
-                    # iparams and according errors get stored in array. Why initialize zero arrays every iteration? 
+                    # iparams and according errors get stored in array
                     particles_temp = np.zeros((pcount, model_obj.iparams_arr.shape[1]), model_obj.dtype)
                     epses_temp = np.zeros((pcount, self.hist_eps_dim), model_obj.dtype)
 
@@ -212,9 +216,15 @@ class ABC_SMC(BaseFitter):
                     # if ensemble size isn't reached, continue
                     # random seed gets updated
                     _random_seed = random_seed + 100000 * iter_i + 1000 * (sub_iter_i + 1)
-
-                    # _results_ext = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # runs the abc_smc, why use different random seed for each job?
-                    _results_ext = mpool.starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # runs the abc_smc, why use different random seed for each job?
+                    
+                    if use_multiprocessing == True:
+                        logger.info("multiprocessing is used")
+                        _results_ext = mpool.starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # runs the abc_smc
+                    else:
+                        logger.info("multiprocessing is not used")
+                        _results_ext = starmap(abc_smc_worker, [(*worker_args, _random_seed + i) for i in range(jobs)]) # runs the abc_smc
+                        
+                    
                     _results.extend(_results_ext) #results get appended to _results
 
                     sub_iter_i += 1
@@ -249,7 +259,7 @@ class ABC_SMC(BaseFitter):
                 if isinstance(eps_quantile, float):
                     new_eps = np.quantile(epses_temp, eps_quantile, axis=0) # epsilon gets adaoted based on quantiles. 
 
-                    # after the first couple of iterations, the new eps gets simply set to the its maximum value instead of choosing a different eps for each observer?
+                    # after the first couple of iterations, the new eps gets simply set to the its maximum value instead of choosing a different eps for each observer
                     if balanced_iterations > iter_i:
                         new_eps[:] = np.max(new_eps)
                     
@@ -322,12 +332,12 @@ def abc_smc_worker(*args: Any) -> Tuple[np.ndarray, np.ndarray]:
 
     # TODO: sort data_dt by time
     # sort
-    sort_index = np.argsort([_.timestamp() for _ in data_obj.data_dt]) # the index is sorted by time (shouldn't it already be sorted by default?)
+    sort_index = np.argsort([_.timestamp() for _ in data_obj.data_dt]) # the index is sorted by time (sometimes this isn't the case by default)
 
     # generate synthetic profiles
     profiles = np.array(model_obj.simulator(np.array(data_obj.data_dt)[sort_index], np.array(data_obj.data_o)[sort_index])[0], dtype=model_obj.dtype) #obtain magnetic field
 
-    # resort profiles ? why
+    # resort profiles
     sort_index_rev = np.argsort(sort_index)
     profiles = profiles[sort_index_rev]
 

@@ -26,17 +26,17 @@ class SimulationBlackBox(object):
         iparams                initial parameters
         sparams                state parameters
         ensemble_size          number of particles to be accepted
-        dtype                  ?
+        dtype                  can be used to have different datatypes for GPU optimization
         iparams_array          initial parameters for each ensemble member
         iparams_kernel         kernel to be used for perturbation
         iparams_weight         weight to be assigned to each particle
-        iparams_kernel_decomp  ?
+        iparams_kernel_decomp  
         sparams_arr            state parameters for each ensemble 
         
         qs_sx                  quaternion to rotate from s to x
         qs_xs                  quaternion to rotate from x to s
 
-        iparams_meta           ?
+        iparams_meta           used to index iparams by numbers
         
     
     
@@ -83,7 +83,7 @@ class SimulationBlackBox(object):
     qs_sx: np.ndarray
     qs_xs: np.ndarray
 
-    def __init__(self, dt_0: Union[str, datetime.datetime], iparams: dict, sparams: Union[int, Sequence[int]], ensemble_size: int, dtype: type) -> None:
+    def __init__(self, dt_0: Union[str, datetime.datetime], iparams: dict, sparams: Union[int, Sequence[int]], ensemble_size: int,  dtype: type) -> None:
         self.dt_0 = sanitize_dt(dt_0)
         self.dt_t = self.dt_0
 
@@ -379,7 +379,7 @@ def _numba_perturb_kernel_cm(iparams_new: np.ndarray, iparams_old: np.ndarray, w
         iparams_old      old initial parameters
         weights_old      weights used in the previous iteration
         kernel_lower     kernel from previous iteration
-        meta             ?
+        meta             used to index params by value instead of keyword
         
     Returns:
         None

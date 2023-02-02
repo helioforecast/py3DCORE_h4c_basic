@@ -24,7 +24,7 @@ def generate_quaternions(arr: np.ndarray, qs_sx: np.ndarray, qs_xs: np.ndarray, 
         indices          quaternion indices
         
     Returns:
-        None             ???? Why does this function not return anything?
+        None             
     """
     
     if indices is None:
