@@ -21,7 +21,7 @@ logging.getLogger("heliosat.spacecraft").setLevel("WARNING")
 if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 6, 2, 6, tzinfo=datetime.timezone.utc)
 
-    t_s_psp = datetime.datetime(2022, 6, 2, 12, tzinfo=datetime.timezone.utc)
+    t_s_psp = datetime.datetime(2022, 6, 2, 10, tzinfo=datetime.timezone.utc)
     t_e_psp = datetime.datetime(2022, 6, 3, 6, tzinfo=datetime.timezone.utc)
 
     t_psp = [datetime.datetime(2022, 6, 2, 13, tzinfo=datetime.timezone.utc),
@@ -64,33 +64,33 @@ if __name__ == "__main__":
         "ensemble_size": int(2**16), #2**17
         "iparams": {
            "cme_longitude": {
-               "maximum": -110,
-               "minimum": -130
+               "maximum": -50,
+               "minimum": -150
            },
            "cme_latitude": {
-               "maximum": -10,
+               "maximum": 50,
                "minimum": -50
            },
            "cme_inclination": {
-               "maximum": 10,
+               "maximum": 50,
                "minimum": 0
            }, 
             "cme_launch_velocity": {
-                "maximum": 750,
-                "minimum": 250
+                "maximum": 900,
+                "minimum": 100
             },
             "cme_launch_radius": {
                 "distribution": "uniform",
                 "maximum": 15,
-                "minimum": 5
+                "minimum": 3
             }
         }
     }
 
-    output = 'psp02062022_heeq_512_4FP/'
+    output = 'psp02062022_heeq_1024_4FP/'
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
     fitter.add_observer("PSP", t_psp, t_s_psp, t_e_psp)
 
-    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=64, workers=64, sampling_freq=3600, output=output, eps_quantile=0.25)
+    fitter.run(ensemble_size=1024, reference_frame="HEEQ", jobs=64, workers=64, sampling_freq=3600, output=output, eps_quantile=0.25)
