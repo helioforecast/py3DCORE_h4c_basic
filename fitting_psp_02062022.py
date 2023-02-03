@@ -63,30 +63,54 @@ if __name__ == "__main__":
         "ensemble_size": int(2**16), 
         "iparams": {
            "cme_longitude": {
-               "maximum": -50,
-               "minimum": -150
+               "maximum": -80,
+               "minimum": -120
            },
            "cme_latitude": {
-               "maximum": 50,
-               "minimum": -50
+               "maximum": 10,
+               "minimum": -30
            },
            "cme_inclination": {
-               "maximum": 50,
+               "maximum": 20,
                "minimum": 0
            }, 
-            "cme_launch_velocity": {
-                "maximum": 900,
-                "minimum": 100
-            },
-            "cme_launch_radius": {
-                "distribution": "uniform",
-                "maximum": 15,
-                "minimum": 3
-            }
+           "cme_diameter_1au": {
+               "maximum": 0.35,
+               "minimum": 0.2
+           }, 
+           "cme_aspect_ratio": {
+               "maximum": 3.5,
+               "minimum": 2.5
+           }, 
+           "cme_launch_radius": {
+               "maximum": 10,
+               "minimum": 3
+           },
+           "cme_launch_velocity": {
+               "maximum": 700,
+               "minimum": 300
+           },
+           "t_factor": {
+               "maximum": 100,
+               "minimum": 20
+           },
+           "magnetic_field_strength_1au": {
+               "maximum": 20,
+               "minimum": 3
+           },
+           "background_drag": {
+               "maximum": 2,
+               "minimum": 1
+           },
+           "background_velocity": {
+               "maximum": 400,
+               "minimum": 250
+           } 
+            
         }
     }
 
-    output = 'psp02062022_heeq_1024_4FP/'
+    output = 'psp02062022_heeq_1024_4FP_run2/'
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
