@@ -561,7 +561,7 @@ class CustomData(FittingData):
             # The according magnetic field data 
             # for the fitting points is obtained
             
-            data = observer_obj.get(dt, "mag", reference_frame=self.reference_frame, use_cache=True, **kwargs)
+            _, data = observer_obj.get(dt, "mag", reference_frame=self.reference_frame, use_cache=True, **kwargs)
             
             dt_all = [dt_s] + dt + [dt_e] # all time points
             trajectory = observer_obj.trajectory(dt_all, reference_frame=self.reference_frame, data_key = "pos") # returns the spacecraft trajectory
