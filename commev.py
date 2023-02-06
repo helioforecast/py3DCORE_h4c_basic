@@ -24,32 +24,21 @@ if __name__ == "__main__":
     i1au = wincat + stacat + stbcat
     print('ICMECAT events near 1 AU',len(i1au))
     
-    slevent = evt.findevent(solocat, year=2022, month=9, day=1)
+    slevent = evt.findevent(solocat, year=2022, month=9, day=7)
     
     #t_launch = winevent[0].begin-datetime.timedelta(days=4)
 
-    t_launch = datetime.datetime(2022, 8, 29, 0, tzinfo=datetime.timezone.utc)
+    t_launch = datetime.datetime(2022, 9, 5, 18, 45, tzinfo=datetime.timezone.utc)
 
-    t_s_psp = datetime.datetime(2022, 9, 1, 0, tzinfo=datetime.timezone.utc)
-    t_e_psp = datetime.datetime(2022, 9, 3, 0, tzinfo=datetime.timezone.utc)
+    t_s_psp = datetime.datetime(2022, 9, 7, 0, 30, tzinfo=datetime.timezone.utc)
+    t_e_psp = datetime.datetime(2022, 9, 8, 5, 0,  tzinfo=datetime.timezone.utc)
 
     t_psp = [
-        datetime.datetime(2022, 9, 2, 2, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 2, 4, tzinfo=datetime.timezone.utc) ,
-        datetime.datetime(2022, 9, 2, 6, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 2, 8, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 7, 2, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 7, 4, tzinfo=datetime.timezone.utc) ,
+        datetime.datetime(2022, 9, 7, 6, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 7, 8, tzinfo=datetime.timezone.utc),
     ]
-    
-#     t_launch = datetime.datetime(2022, 6, 2, 6, tzinfo=datetime.timezone.utc)
-
-#     t_s_psp = datetime.datetime(2022, 6, 2, 12, tzinfo=datetime.timezone.utc)
-#     t_e_psp = datetime.datetime(2022, 6, 3, 6, tzinfo=datetime.timezone.utc)
-
-#     t_psp = [datetime.datetime(2022, 6, 2, 13, tzinfo=datetime.timezone.utc),
-#         datetime.datetime(2022, 6, 2, 14, tzinfo=datetime.timezone.utc),
-#         datetime.datetime(2022, 6, 2, 15, tzinfo=datetime.timezone.utc),
-#         datetime.datetime(2022, 6, 2, 16, tzinfo=datetime.timezone.utc)]
-    
     
     model_kwargs = {
         "ensemble_size": int(2**17), #2**17
@@ -83,4 +72,4 @@ if __name__ == "__main__":
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
     fitter.add_observer("SOLO", t_psp, t_s_psp, t_e_psp)
 
-    fitter.run(ensemble_size=512, reference_frame="HEEQ", sampling_freq=3600, output=output, use_multiprocessing=True, custom_data='solo_2022_sep_mag_ll_swa_science.p') 
+    fitter.run(ensemble_size=512, reference_frame="HEEQ", sampling_freq=3600, output=output, use_multiprocessing=True, custom_data='solo_2022sep.p') 

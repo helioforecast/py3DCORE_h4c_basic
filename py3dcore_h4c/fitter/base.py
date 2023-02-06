@@ -13,6 +13,11 @@ from heliosat.util import sanitize_dt
 from heliosat.transform import transform_reference_frame
 from typing import Any, List, Optional, Sequence, Type, Union
 
+from py3dcore_h4c.cdftopickle import cdftopickle
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_frame: str = "HCI", reference_frame_to: str = "HCI", perc: float = 0.95, max_index=None) -> np.ndarray:
     
@@ -393,19 +398,28 @@ class custom_observer(object):
     
     def __init__(self, data_path:str, **kwargs: Any) -> None:
         
-        file = pickle.load(open('py3dcore_h4c/custom_data/'+ data_path, 'rb'))
-                
-        self.data = file
+        try:
+            file = pickle.load(open('py3dcore_h4c/custom_data/'+ data_path, 'rb'))
+            self.data = file
+            self.sphere2cart()
+        except:
+            logger.info("Did not find %s, creating pickle file from cdf", data_path)
+            #try:
+            createpicklefiles(self,data_path)
+            file = pickle.load(open('py3dcore_h4c/custom_data/'+ data_path, 'rb'))
+            self.data = file
+            #except:
+             #   raise NameError('Datatype not implemented or cdf files not found!')
         
-        self.sphere2cart()
         
     def sphere2cart(self):
         
         self.data['x'] = self.data['r'] * np.sin(self.data['lat']) * np.cos(self.data['lon'])
-        print(self.data['x'])
+        #print(self.data['x'])
         self.data['y'] = self.data['r'] * np.sin( self.data['lat'] ) * np.sin( self.data['lon'] )
         self.data['z'] = self.data['r'] * np.cos( self.data['lat'] )
         
+    
         
     def get(self, dtp: Union[str, datetime.datetime, Sequence[str], Sequence[datetime.datetime]], data_key: str, **kwargs: Any) -> np.ndarray:
         
@@ -440,6 +454,20 @@ class custom_observer(object):
             
         return np.array(tra)
         
+def createpicklefiles(self, data_path):
+    name = data_path.split('.')[0]
+    sc = name.split('_')[0]
+    ev = name.split('_')[1]
+
+    magpath = 'py3dcore_h4c/custom_data/' + sc +'_mag_'+ ev
+    swapath = 'py3dcore_h4c/custom_data/' + sc +'_swa_'+ ev
+
+    ll = cdftopickle(magpath, swapath, sc)
+
+    filename= sc +'_'+ ev + '.p'
+
+    pickle.dump(ll, open('py3dcore_h4c/custom_data/' + filename, "wb"))
+    logger.info("Created pickle file from cdf: %s", filename)
                 
         
 class CustomData(FittingData):
