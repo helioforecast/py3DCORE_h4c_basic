@@ -438,7 +438,7 @@ class custom_observer(object):
             res = [self.data[com][t] for com in ['bx','by','bz']]
             dat.append((res))
             
-        return np.array(dat)
+        return np.array(dtp), np.array(dat)
 
     
     def trajectory(self, dtp: Union[str, datetime.datetime, Sequence[str], Sequence[datetime.datetime]], data_key: str, **kwargs: Any) -> np.ndarray:
