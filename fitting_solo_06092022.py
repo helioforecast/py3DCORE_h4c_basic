@@ -19,16 +19,17 @@ logging.getLogger("heliosat.spacecraft").setLevel("WARNING")
 
 
 if __name__ == "__main__":
-    t_launch = datetime.datetime(2022, 6, 2, 6, tzinfo=datetime.timezone.utc)
+    t_launch = datetime.datetime(2022, 9, 5, 18, 45, tzinfo=datetime.timezone.utc) # launch time assumed at CME impact at PSP at 14.72 Rs
 
-    t_s_psp = datetime.datetime(2022, 6, 2, 12, tzinfo=datetime.timezone.utc)
-    t_e_psp = datetime.datetime(2022, 6, 3, 6, tzinfo=datetime.timezone.utc)
+    t_s_solo = datetime.datetime(2022, 9, 7, 0, 30, tzinfo=datetime.timezone.utc) 
+    t_e_solo = datetime.datetime(2022, 9, 8, 5, tzinfo=datetime.timezone.utc)
 
-    t_psp = [datetime.datetime(2022, 6, 2, 13, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 6, 2, 14, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 6, 2, 15, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 6, 2, 16, tzinfo=datetime.timezone.utc)]
-
+    t_solo = [
+        datetime.datetime(2022, 9, 7, 2, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 7, 4, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 7, 6, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 7, 8, tzinfo=datetime.timezone.utc)
+    ]
 
 # Restraining the initial values for the ensemble members leads to more efficient fitting.
 # 
@@ -64,33 +65,33 @@ if __name__ == "__main__":
         "ensemble_size": int(2**16), #2**17
         "iparams": {
            "cme_longitude": {
-               "maximum": -110,
-               "minimum": -130
+               "maximum": 180,
+               "minimum": -180
            },
            "cme_latitude": {
-               "maximum": -10,
-               "minimum": -50
+               "maximum": 90,
+               "minimum": -90
            },
            "cme_inclination": {
-               "maximum": 10,
+               "maximum": 90,
                "minimum": 0
            }, 
-            "cme_launch_velocity": {
-                "maximum": 750,
-                "minimum": 250
-            },
-            "cme_launch_radius": {
-                "distribution": "uniform",
-                "maximum": 15,
-                "minimum": 5
-            }
+           "cme_launch_velocity": {
+               "maximum": 1700,
+               "minimum": 800
+           },
+           "cme_launch_radius": {
+               "maximum": 20,
+               "minimum": 10
+           }
         }
     }
 
-    output = 'psp02062022_heeq_512_4FP/'
+    output = 'solo06092022_heeq_512_4FP/'
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
-    fitter.add_observer("PSP", t_psp, t_s_psp, t_e_psp)
+    fitter.add_observer("SOLO", t_solo, t_s_solo, t_e_solo)
 
-    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=64, workers=64, sampling_freq=3600, output=output, eps_quantile=0.25, use_multiprocessing=True)
+    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=64, workers=64, sampling_freq=3600, output=output, eps_quantile=0.25, use_multiprocessing=True, 
+           custom_data='solo_2022_sep_mag_ll_swa_science.p')
