@@ -59,7 +59,7 @@
     "cme_launch_radius": {
         "index": 6,
         "name": "initial radius",
-        "distribution": "fixed",
+        "distribution": "uniform",
         "default_value": 20,
         "maximum": 100,
         "minimum": 5,
