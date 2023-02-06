@@ -9,7 +9,7 @@ import os as os
 import pickle as pickle
 import time as time
 
-from .base import BaseFitter, FittingData
+from .base import BaseFitter, FittingData, CustomData
 from ..model import SimulationBlackBox
 from ..util import set_random_seed
 from heliosat.util import sanitize_dt
@@ -105,6 +105,7 @@ class ABC_SMC(BaseFitter):
         workers = kwargs.pop("workers", multiprocessing.cpu_count()-1) # number of workers 
         jobs = kwargs.pop("jobs", workers) # number of jobs
         use_multiprocessing = kwargs.pop("use_multiprocessing", False) # Whether to use multiprocessing 
+        custom_data = kwargs.pop("custom_data", False)
         
         
 
@@ -112,8 +113,12 @@ class ABC_SMC(BaseFitter):
         
         
         # Fitting data comes from the module fitter.base.py 
-        
-        data_obj = FittingData(self.observers, reference_frame) 
+        if custom_data == False:
+            data_obj = FittingData(self.observers, reference_frame) 
+            logger.info("Using HelioSat to retrieve data")
+        else:
+            data_obj = CustomData(self.observers, reference_frame, custom_data)
+            logger.info("Using custom datafile: %s", custom_data)
         data_obj.generate_noise(kwargs.get("noise_model", "psd"), kwargs.get("sampling_freq", 300), **data_kwargs) # noise is generated for the Fitting Data Object, function also comes from the module fitter.base.py 
 
         kill_flag = False

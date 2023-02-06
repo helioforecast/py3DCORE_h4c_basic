@@ -270,7 +270,7 @@ class FittingData(object):
                 observer_obj = getattr(heliosat, observer)()
 
                 _, data = observer_obj.get([dt_s, dt_e], "mag", reference_frame=self.reference_frame, sampling_freq=sampling_freq, use_cache=True, as_endpoints=True)
-
+                
                 data[np.isnan(data)] = 0 #set all nan values to 0
 
                 fF, fS = mag_fft(dt, data, sampling_freq=sampling_freq) # computes the mean power spectrum distribution
@@ -375,3 +375,243 @@ class FittingData(object):
             return sumstat(values, self.data_b, stype, mask=self.data_m, data_l=self.data_l, length=self.length)
         else:
             return sumstat(values, self.data_b, stype, data_l=self.data_l, length=self.length)
+
+            
+
+class custom_observer(object):
+    
+    """Handles custom data and sets the following attributes for self:
+            data         full custom dataset
+
+        Arguments:
+            data_path    where to find the data
+            kwargs       any
+
+        Returns:
+            None
+        """
+    
+    def __init__(self, data_path:str, **kwargs: Any) -> None:
+        
+        file = pickle.load(open('py3dcore_h4c/custom_data/'+ data_path, 'rb'))
+                
+        self.data = file
+        
+        self.sphere2cart()
+        
+    def sphere2cart(self):
+        
+        self.data['x'] = self.data['r'] * np.sin(self.data['lat']) * np.cos(self.data['lon'])
+        print(self.data['x'])
+        self.data['y'] = self.data['r'] * np.sin( self.data['lat'] ) * np.sin( self.data['lon'] )
+        self.data['z'] = self.data['r'] * np.cos( self.data['lat'] )
+        
+        
+    def get(self, dtp: Union[str, datetime.datetime, Sequence[str], Sequence[datetime.datetime]], data_key: str, **kwargs: Any) -> np.ndarray:
+        
+        sampling_freq = kwargs.pop("sampling_freq", 60)
+        
+        if kwargs.pop("as_endpoints", False):
+            _ = np.linspace(dtp[0].timestamp(), dtp[-1].timestamp(), int((dtp[-1].timestamp() - dtp[0].timestamp()) // sampling_freq))  
+            dtp = [datetime.datetime.fromtimestamp(_, datetime.timezone.utc) for _ in _]
+            
+        dat = []
+        tt = [x.replace(tzinfo=None,second=0, microsecond=0) for x in dtp]
+        
+        ii = [np.where(self.data['time']==x)[0][0] for x in tt if np.where(self.data['time']==x)[0].size > 0]
+        
+        for t in ii:
+            res = [self.data[com][t] for com in ['bx','by','bz']]
+            dat.append((res))
+            
+        return np.array(dat)
+
+    
+    def trajectory(self, dtp: Union[str, datetime.datetime, Sequence[str], Sequence[datetime.datetime]], data_key: str, **kwargs: Any) -> np.ndarray:
+        
+        tra = []
+        tt = [x.replace(tzinfo=None,second=0, microsecond=0) for x in dtp]
+
+        ii = [np.where(self.data['time']==x)[0][0] for x in tt if np.where(self.data['time']==x)[0].size > 0]
+        
+        for t in ii:
+            res = [self.data[com][t] for com in ['x','y','z']]
+            tra.append(res)
+            
+        return np.array(tra)
+        
+                
+        
+class CustomData(FittingData):
+    """
+    Class(object) to handle custom data used for fitting.
+    Sets the following properties for self:
+        length                  length of list of observers
+        observers               list of observers
+        reference_frame         reference frame to work in
+    
+    Arguments:
+        observers               list of observers
+        reference_frame         reference frame to work in        
+        data_path               where to find the dataset
+        
+    Returns:
+        None
+        
+    Functions:
+        add_noise
+        generate_noise
+        generate_data
+        sumstat
+    """
+    
+    data_dt: List[np.ndarray]
+    data_b: List[np.ndarray]
+    data_o: List[np.ndarray]
+    data_m: List[np.ndarray]
+    data_l: List[int]
+
+    psd_dt: List[np.ndarray]
+    psd_fft: List[np.ndarray]    
+
+    length: int
+    noise_model: str
+    observers: list
+    reference_frame: str
+    sampling_freq: int
+
+    def __init__(self, observers: list, reference_frame: str, data_path: str) -> None:
+        
+        FittingData.__init__(self, observers, reference_frame)        
+        self.data_path = data_path
+    
+    def generate_data(self, time_offset: Union[int, Sequence], **kwargs: Any) -> None:
+        
+        """
+        Generates data for each observer at the given times. 
+        Sets the following properties for self:
+            data_dt      all needed timesteps [dt_s, dt, dt_e]
+            data_b       magnetic field data for data_dt
+            data_o       trajectory of observers
+            data_m       mask for data_b with 1 for each point except first and last
+            data_l       length of data
+
+        Arguments:
+            time_offset  shift timeseries for observer   
+            **kwargs     Any
+
+        Returns:
+            None
+        """
+        
+        self.data_dt = []
+        self.data_b = []
+        self.data_o = []
+        self.data_m = []
+        self.data_l = []
+        
+        # Each observer is treated separately
+
+        for o in range(self.length):
+            
+            # The values of the observer are unpacked
+            
+            observer, dt, dt_s, dt_e, dt_shift = self.observers[o]
+            
+            # The reference points are corrected by time_offset
+
+            if hasattr(time_offset, "__len__"):
+                dt_s -= datetime.timedelta(hours=time_offset[o])  # type: ignore
+                dt_e += datetime.timedelta(hours=time_offset[o])  # type: ignore
+            else:
+                dt_s -= datetime.timedelta(hours=time_offset)  # type: ignore
+                dt_e += datetime.timedelta(hours=time_offset)  # type: ignore
+            # The observer object is created
+                        
+            observer_obj = custom_observer(self.data_path)
+            
+            # The according magnetic field data 
+            # for the fitting points is obtained
+            
+            data = observer_obj.get(dt, "mag", reference_frame=self.reference_frame, use_cache=True, **kwargs)
+            
+            dt_all = [dt_s] + dt + [dt_e] # all time points
+            trajectory = observer_obj.trajectory(dt_all, reference_frame=self.reference_frame, data_key = "pos") # returns the spacecraft trajectory
+            # an array containing the data plus one additional 
+            # zero each at the beginning and the end is created
+            
+            b_all = np.zeros((len(data) + 2, 3))
+            b_all[1:-1] = data
+            
+            # the mask is created, a list containing 1] for each 
+            # data point and 0 for the first and last entry
+            mask = [1] * len(b_all)
+            mask[0] = 0
+            mask[-1] = 0
+
+            if dt_shift:
+                self.data_dt.extend([_ + dt_shift for _ in dt_all])
+            else:
+                self.data_dt.extend(dt_all)
+            self.data_b.extend(b_all)
+            self.data_o.extend(trajectory)
+            self.data_m.extend(mask)
+            self.data_l.append(len(data))
+
+    def generate_noise(self, noise_model: str = "psd", sampling_freq: int = 300, **kwargs: Any) -> None:
+        
+
+        """
+        Generates noise according to the noise model.
+        Sets the following properties for self:
+            psd_dt                altered time axis for power spectrum
+            psd_fft               power spectrum
+            sampling_freq         sampling frequency
+            noise_model           model used to calculate noise
+
+        Arguments:
+            noise_model    "psd"     model to use for generating noise (e.g. power spectrum distribution)
+            sampling_freq  300       sampling frequency of data
+
+        Returns:
+            None
+        """
+            
+        self.psd_dt = []
+        self.psd_fft = []
+        self.sampling_freq = sampling_freq
+
+        self.noise_model = noise_model
+
+        if noise_model == "psd":
+        # get data for each observer
+            for o in range(self.length):
+                observer, dt, dt_s, dt_e, _ = self.observers[o]
+
+                 # The observer object is created
+                        
+                observer_obj = custom_observer(self.data_path)
+            
+                # The according magnetic field data 
+                # for the fitting points is obtained
+            
+                data = observer_obj.get([dt_s, dt_e], "mag", reference_frame=self.reference_frame, sampling_freq=sampling_freq, use_cache=True, as_endpoints=True)
+                
+                data[np.isnan(data)] = 0 #set all nan values to 0
+
+                fF, fS = mag_fft(dt, data, sampling_freq=sampling_freq) # computes the mean power spectrum distribution
+
+                kdt = (len(fS) - 1) / (dt[-1].timestamp() - dt[0].timestamp()) 
+                fT = np.array([int((_.timestamp() - dt[0].timestamp()) * kdt) for _ in dt]) 
+
+                self.psd_dt.append(fT) # appends the altered time axis
+                self.psd_fft.append(fS)
+                # appends the power spectrum 
+        else:
+            raise NotImplementedError
+        
+        
+        
+        
+        
+ #       (dt, "mag", reference_frame=self.reference_frame, use_cache=True, **kwargs)
