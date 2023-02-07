@@ -94,4 +94,4 @@ if __name__ == "__main__":
     fitter.add_observer("SOLO", t_solo, t_s_solo, t_e_solo)
 
     fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=64, workers=64, sampling_freq=3600, output=output, eps_quantile=0.25, use_multiprocessing=True, 
-           custom_data='solo_2022_sep_mag_ll_swa_science.p')
+           custom_data='solo_2022sep.p')

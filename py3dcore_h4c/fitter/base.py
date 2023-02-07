@@ -19,7 +19,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_frame: str = "HCI", reference_frame_to: str = "HCI", perc: float = 0.95, max_index=None) -> np.ndarray:
+def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_frame: str = "HCI", reference_frame_to: str = "HCI", perc: float = 0.95, max_index=None, custom_data= False) -> np.ndarray:
     
     """
     Generates an ensemble from a Fitter object.
@@ -31,6 +31,7 @@ def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_fram
         reference_frame_to  reference frame for output data
         perc                percentage of quantile to be used
         max_index           how much of ensemble is kept
+        custom_data         path to custom data
     Returns:
         ensemble_data 
     """
@@ -41,8 +42,16 @@ def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_fram
 
     for (observer, _, _, _, _) in observers:
         ftobj = BaseFitter(path) # load Fitter from path
-        observer_obj = getattr(heliosat, observer)() # get observer obj
         
+        if custom_data == False:
+            observer_obj = getattr(heliosat, observer)() # get observer obj
+            logger.info("Using HelioSat to retrieve observer data")
+        else:
+            observer_obj = custom_observer(custom_data)
+            logger.info("Using custom datafile: %s", custom_data)
+            
+            
+            
         # simulate flux ropes using iparams from loaded fitter
         ensemble = np.squeeze(np.array(ftobj.model_obj.simulator(dt, observer_obj.trajectory(dt, reference_frame=reference_frame))[0]))
         
@@ -82,7 +91,6 @@ class BaseFitter(object):
 
     Arguments:
         path   Optional     where to save
-
     Returns:
         None
 
@@ -414,10 +422,10 @@ class custom_observer(object):
         
     def sphere2cart(self):
         
-        self.data['x'] = self.data['r'] * np.sin(self.data['lat']) * np.cos(self.data['lon'])
+        self.data['x'] = self.data['r'] * np.sin(self.data['lon']) * np.cos(self.data['lat'])
         #print(self.data['x'])
-        self.data['y'] = self.data['r'] * np.sin( self.data['lat'] ) * np.sin( self.data['lon'] )
-        self.data['z'] = self.data['r'] * np.cos( self.data['lat'] )
+        self.data['y'] = self.data['r'] * np.sin( self.data['lon'] ) * np.sin( self.data['lat'] )
+        self.data['z'] = self.data['r'] * np.cos( self.data['lon'] )
         
     
         
@@ -441,7 +449,7 @@ class custom_observer(object):
         return np.array(dtp), np.array(dat)
 
     
-    def trajectory(self, dtp: Union[str, datetime.datetime, Sequence[str], Sequence[datetime.datetime]], data_key: str, **kwargs: Any) -> np.ndarray:
+    def trajectory(self, dtp: Union[str, datetime.datetime, Sequence[str], Sequence[datetime.datetime]], **kwargs: Any) -> np.ndarray:
         
         tra = []
         tt = [x.replace(tzinfo=None,second=0, microsecond=0) for x in dtp]
@@ -564,7 +572,7 @@ class CustomData(FittingData):
             _, data = observer_obj.get(dt, "mag", reference_frame=self.reference_frame, use_cache=True, **kwargs)
             
             dt_all = [dt_s] + dt + [dt_e] # all time points
-            trajectory = observer_obj.trajectory(dt_all, reference_frame=self.reference_frame, data_key = "pos") # returns the spacecraft trajectory
+            trajectory = observer_obj.trajectory(dt_all, reference_frame=self.reference_frame) # returns the spacecraft trajectory
             # an array containing the data plus one additional 
             # zero each at the beginning and the end is created
             
@@ -623,7 +631,7 @@ class CustomData(FittingData):
                 # The according magnetic field data 
                 # for the fitting points is obtained
             
-                data = observer_obj.get([dt_s, dt_e], "mag", reference_frame=self.reference_frame, sampling_freq=sampling_freq, use_cache=True, as_endpoints=True)
+                _, data = observer_obj.get([dt_s, dt_e], "mag", reference_frame=self.reference_frame, sampling_freq=sampling_freq, use_cache=True, as_endpoints=True)
                 
                 data[np.isnan(data)] = 0 #set all nan values to 0
 
