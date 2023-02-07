@@ -1,13 +1,90 @@
+import os
+
 import numpy as np
 
 import datetime as datetime
 from datetime import timedelta
+import py3dcore_h4c
+from py3dcore_h4c.fitter.base import custom_observer
 
 from py3dcore_h4c.models.toroidal import thin_torus_gh, thin_torus_qs, thin_torus_sq
 
+import matplotlib.pyplot as plt
+
 from itertools import product
 
-import measure as ms
+import py3dcore_h4c.measure as ms
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+def loadandstandardplot(observer= 'solo', t_fit=None, start = None, end=None, path=None, number = -1, custom_data=False, save_fig = True):
+    """
+    Plots the insitu data plus the fitted results.
+
+    Arguments:
+        observer          name of the observer
+        t_fit             datetime points used for fitting
+        start             starting point of the plot
+        end               ending point of the plot
+        path              where to find the fitting results
+        number            which result to use
+        custom_data       path to custom data, otherwise heliosat is used
+        save_fig          whether to save the created figure
+
+    Returns:
+        None
+    """
+        
+    # Get the list of all files in path
+    dir_list = sorted(os.listdir(path))
+
+    resfile = []
+    respath = []
+    # we only want the pickle-files
+    for file in dir_list:
+        if file.endswith(".pickle"):
+            resfile.append(file) 
+            respath.append(os.path.join(path,file))
+            
+    if start == None:
+        start = t_fit[0]
+
+    if end == None:
+        end = t_fit[-1]
+    
+    
+    if custom_data == False:
+        observer_obj = getattr(heliosat, observer)() # get observer obj
+        logger.info("Using HelioSat to retrieve observer data")
+    else:
+        observer_obj = custom_observer(custom_data)
+        logger.info("Using custom datafile: %s", custom_data)
+        
+    t, b = observer_obj.get([start, end], "mag", reference_frame="HEEQ", as_endpoints=True)
+    
+    # get ensemble_data
+    ed = py3dcore_h4c.generate_ensemble(respath[number], t, reference_frame="HEEQ",reference_frame_to="HEEQ", max_index=128, custom_data=custom_data)
+
+    plt.figure(figsize=(28, 12))
+    plt.title(observer+ " fitting result")
+    plt.plot(t, np.sqrt(np.sum(b**2, axis=1)), "k", alpha=0.5)
+    plt.plot(t, b[:, 0], "r", alpha=0.5)
+    plt.plot(t, b[:, 1], "g", alpha=0.5)
+    plt.plot(t, b[:, 2], "b", alpha=0.5)
+    plt.fill_between(t, ed[0][3][0], ed[0][3][1], alpha=0.25, color="k")
+    plt.fill_between(t, ed[0][2][0][:, 0], ed[0][2][1][:, 0], alpha=0.25, color="r")
+    plt.fill_between(t, ed[0][2][0][:, 1], ed[0][2][1][:, 1], alpha=0.25, color="g")
+    plt.fill_between(t, ed[0][2][0][:, 2], ed[0][2][1][:, 2], alpha=0.25, color="b")
+    plt.ylabel("B [nT]")
+    plt.xlabel("Time [MM-DD HH]")
+    for _ in t_fit:
+        plt.axvline(x=_, lw=1, alpha=0.25, color="k", ls="--")
+    if save_fig == True:
+        plt.savefig('%s.png' %respath[number])    
+    plt.show()
+
 
 def plot_configure(ax, **kwargs):
     view_azim = kwargs.pop("view_azim", -25)
