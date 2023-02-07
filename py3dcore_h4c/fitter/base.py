@@ -422,10 +422,10 @@ class custom_observer(object):
         
     def sphere2cart(self):
         
-        self.data['x'] = self.data['r'] * np.sin(self.data['lon']) * np.cos(self.data['lat'])
+        self.data['x'] = self.data['r'] * np.sin(np.deg2rad(self.data['lat'])) * np.cos(np.deg2rad(self.data['lon']))
         #print(self.data['x'])
-        self.data['y'] = self.data['r'] * np.sin( self.data['lon'] ) * np.sin( self.data['lat'] )
-        self.data['z'] = self.data['r'] * np.cos( self.data['lon'] )
+        self.data['y'] = self.data['r'] * np.sin(np.deg2rad(self.data['lat'])) * np.sin(np.deg2rad(self.data['lon']))
+        self.data['z'] = self.data['r'] * np.cos(np.deg2rad(self.data['lat']))
         
     
         
