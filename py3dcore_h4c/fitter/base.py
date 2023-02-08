@@ -13,7 +13,7 @@ from heliosat.util import sanitize_dt
 from heliosat.transform import transform_reference_frame
 from typing import Any, List, Optional, Sequence, Type, Union
 
-from py3dcore_h4c.cdftopickle import cdftopickle
+from ..util import cdftopickle
 
 import logging
 
@@ -409,16 +409,13 @@ class custom_observer(object):
         try:
             file = pickle.load(open('py3dcore_h4c/custom_data/'+ data_path, 'rb'))
             self.data = file
-            self.sphere2cart()
+            #self.sphere2cart()
         except:
             logger.info("Did not find %s, creating pickle file from cdf", data_path)
             #try:
             createpicklefiles(self,data_path)
             file = pickle.load(open('py3dcore_h4c/custom_data/'+ data_path, 'rb'))
             self.data = file
-            #except:
-             #   raise NameError('Datatype not implemented or cdf files not found!')
-        
         
     def sphere2cart(self):
         self.data['x'] = self.data['r'] * np.cos(np.deg2rad(self.data['lon'])) * np.cos(np.deg2rad(self.data['lat']))

@@ -19,7 +19,26 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def loadandstandardplot(observer= 'solo', t_fit=None, start = None, end=None, path=None, number = -1, custom_data=False, save_fig = True):
+def loadpickle(path = None, number = -1):
+
+    """ Loads the filepath of a pickle file. """
+
+    # Get the list of all files in path
+    dir_list = sorted(os.listdir(path))
+
+    resfile = []
+    respath = []
+    # we only want the pickle-files
+    for file in dir_list:
+        if file.endswith(".pickle"):
+            resfile.append(file) 
+            respath.append(os.path.join(path,file))
+            
+    filepath = path + resfile[number]
+
+    return filepath
+
+def standardplot(observer= 'solo', t_fit=None, start = None, end=None, filepath=None, custom_data=False, save_fig = True):
     """
     Plots the insitu data plus the fitted results.
 
@@ -36,18 +55,7 @@ def loadandstandardplot(observer= 'solo', t_fit=None, start = None, end=None, pa
     Returns:
         None
     """
-        
-    # Get the list of all files in path
-    dir_list = sorted(os.listdir(path))
-
-    resfile = []
-    respath = []
-    # we only want the pickle-files
-    for file in dir_list:
-        if file.endswith(".pickle"):
-            resfile.append(file) 
-            respath.append(os.path.join(path,file))
-            
+         
     if start == None:
         start = t_fit[0]
 
@@ -65,7 +73,7 @@ def loadandstandardplot(observer= 'solo', t_fit=None, start = None, end=None, pa
     t, b = observer_obj.get([start, end], "mag", reference_frame="HEEQ", as_endpoints=True)
     
     # get ensemble_data
-    ed = py3dcore_h4c.generate_ensemble(respath[number], t, reference_frame="HEEQ",reference_frame_to="HEEQ", max_index=128, custom_data=custom_data)
+    ed = py3dcore_h4c.generate_ensemble(filepath, t, reference_frame="HEEQ",reference_frame_to="HEEQ", max_index=128, custom_data=custom_data)
 
     plt.figure(figsize=(28, 12))
     plt.title(observer+ " fitting result")
@@ -82,7 +90,7 @@ def loadandstandardplot(observer= 'solo', t_fit=None, start = None, end=None, pa
     for _ in t_fit:
         plt.axvline(x=_, lw=1, alpha=0.25, color="k", ls="--")
     if save_fig == True:
-        plt.savefig('%s.png' %respath[number])    
+        plt.savefig('%s.png' %filepath)    
     plt.show()
 
 
