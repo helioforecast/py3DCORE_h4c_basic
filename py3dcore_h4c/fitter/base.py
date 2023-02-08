@@ -417,22 +417,15 @@ class custom_observer(object):
             file = pickle.load(open('py3dcore_h4c/custom_data/'+ data_path, 'rb'))
             self.data = file
         
-    def sphere2cart(self):
-<<<<<<< HEAD
         
-=======
->>>>>>> 27b2fdd916bfa6cdb600cd0a8beee6566fdf0237
+    def sphere2cart(self):
+
         self.data['x'] = self.data['r'] * np.cos(np.deg2rad(self.data['lon'])) * np.cos(np.deg2rad(self.data['lat']))
         #print(self.data['x'])
         self.data['y'] = self.data['r'] * np.sin(np.deg2rad(self.data['lon'] )) * np.cos( np.deg2rad(self.data['lat'] ))
         self.data['z'] = self.data['r'] * np.sin(np.deg2rad( self.data['lat'] ))
-<<<<<<< HEAD
 
-          
-=======
-    
         
->>>>>>> 27b2fdd916bfa6cdb600cd0a8beee6566fdf0237
     def get(self, dtp: Union[str, datetime.datetime, Sequence[str], Sequence[datetime.datetime]], data_key: str, **kwargs: Any) -> np.ndarray:
         
         sampling_freq = kwargs.pop("sampling_freq", 60)
