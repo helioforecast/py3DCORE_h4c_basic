@@ -13,7 +13,7 @@ from heliosat.util import sanitize_dt
 from heliosat.transform import transform_reference_frame
 from typing import Any, List, Optional, Sequence, Type, Union
 
-from py3dcore_h4c.cdftopickle import cdftopickle
+from ..util import cdftopickle
 
 import logging
 
@@ -409,25 +409,30 @@ class custom_observer(object):
         try:
             file = pickle.load(open('py3dcore_h4c/custom_data/'+ data_path, 'rb'))
             self.data = file
-            self.sphere2cart()
+            #self.sphere2cart()
         except:
             logger.info("Did not find %s, creating pickle file from cdf", data_path)
             #try:
             createpicklefiles(self,data_path)
             file = pickle.load(open('py3dcore_h4c/custom_data/'+ data_path, 'rb'))
             self.data = file
-            #except:
-             #   raise NameError('Datatype not implemented or cdf files not found!')
-        
         
     def sphere2cart(self):
+<<<<<<< HEAD
         
+=======
+>>>>>>> 27b2fdd916bfa6cdb600cd0a8beee6566fdf0237
         self.data['x'] = self.data['r'] * np.cos(np.deg2rad(self.data['lon'])) * np.cos(np.deg2rad(self.data['lat']))
         #print(self.data['x'])
         self.data['y'] = self.data['r'] * np.sin(np.deg2rad(self.data['lon'] )) * np.cos( np.deg2rad(self.data['lat'] ))
         self.data['z'] = self.data['r'] * np.sin(np.deg2rad( self.data['lat'] ))
+<<<<<<< HEAD
 
           
+=======
+    
+        
+>>>>>>> 27b2fdd916bfa6cdb600cd0a8beee6566fdf0237
     def get(self, dtp: Union[str, datetime.datetime, Sequence[str], Sequence[datetime.datetime]], data_key: str, **kwargs: Any) -> np.ndarray:
         
         sampling_freq = kwargs.pop("sampling_freq", 60)

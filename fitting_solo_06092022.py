@@ -21,16 +21,15 @@ logging.getLogger("heliosat.spacecraft").setLevel("WARNING")
 if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 9, 5, 18, 45, tzinfo=datetime.timezone.utc) # launch time assumed at CME impact at PSP at 14.72 Rs
 
-    t_s_solo = datetime.datetime(2022, 9, 7, 8, tzinfo=datetime.timezone.utc) 
-    t_e_solo = datetime.datetime(2022, 9, 8, 5, tzinfo=datetime.timezone.utc)
+    t_s = datetime.datetime(2022, 9, 7, 8, tzinfo=datetime.timezone.utc) 
+    t_e = datetime.datetime(2022, 9, 8, 5, tzinfo=datetime.timezone.utc)
 
-    t_solo = [
+    t_fit = [
         datetime.datetime(2022, 9, 7, 9, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 7, 15, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 7, 21, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 8, 3, tzinfo=datetime.timezone.utc)#,
-#        datetime.datetime(2022, 9, 7, 18, tzinfo=datetime.timezone.utc)
-    ]
+        datetime.datetime(2022, 9, 8, 3, tzinfo=datetime.timezone.utc)
+     ]
 
 # Restraining the initial values for the ensemble members leads to more efficient fitting.
 # 
@@ -96,10 +95,10 @@ if __name__ == "__main__":
         }
     }
 
-    output = 'solo06092022_heeq_512_4FP_allP_2/'
+    output = 'solo06092022_heeq_512_4FP_allP/'
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
-    fitter.add_observer("SOLO", t_solo, t_s_solo, t_e_solo)
+    fitter.add_observer("SOLO", t_fit, t_s, t_e)
 
-    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=64, workers=64, sampling_freq=3600, output=output, eps_quantile=0.25, use_multiprocessing=True, custom_data='solo_2022sep.p')
+    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=64, workers=64, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=True, custom_data='solo_2022sep.p')
