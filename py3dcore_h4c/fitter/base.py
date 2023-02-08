@@ -422,20 +422,12 @@ class custom_observer(object):
         
     def sphere2cart(self):
         
-<<<<<<< HEAD
         self.data['x'] = self.data['r'] * np.cos(np.deg2rad(self.data['lon'])) * np.cos(np.deg2rad(self.data['lat']))
         #print(self.data['x'])
         self.data['y'] = self.data['r'] * np.sin(np.deg2rad(self.data['lon'] )) * np.cos( np.deg2rad(self.data['lat'] ))
         self.data['z'] = self.data['r'] * np.sin(np.deg2rad( self.data['lat'] ))
-=======
-        self.data['x'] = self.data['r'] * np.sin(np.deg2rad(self.data['lat'])) * np.cos(np.deg2rad(self.data['lon']))
-        #print(self.data['x'])
-        self.data['y'] = self.data['r'] * np.sin(np.deg2rad(self.data['lat'])) * np.sin(np.deg2rad(self.data['lon']))
-        self.data['z'] = self.data['r'] * np.cos(np.deg2rad(self.data['lat']))
->>>>>>> 0cc6ddd1b4538e24235392a1fa6dd0864779d42b
-        
-    
-        
+
+          
     def get(self, dtp: Union[str, datetime.datetime, Sequence[str], Sequence[datetime.datetime]], data_key: str, **kwargs: Any) -> np.ndarray:
         
         sampling_freq = kwargs.pop("sampling_freq", 60)

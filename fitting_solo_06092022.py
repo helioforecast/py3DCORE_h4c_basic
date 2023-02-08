@@ -21,14 +21,15 @@ logging.getLogger("heliosat.spacecraft").setLevel("WARNING")
 if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 9, 5, 18, 45, tzinfo=datetime.timezone.utc) # launch time assumed at CME impact at PSP at 14.72 Rs
 
-    t_s_solo = datetime.datetime(2022, 9, 7, 0, 30, tzinfo=datetime.timezone.utc) 
+    t_s_solo = datetime.datetime(2022, 9, 7, 8, tzinfo=datetime.timezone.utc) 
     t_e_solo = datetime.datetime(2022, 9, 8, 5, tzinfo=datetime.timezone.utc)
 
     t_solo = [
-        datetime.datetime(2022, 9, 7, 2, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 7, 4, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 7, 6, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 7, 8, tzinfo=datetime.timezone.utc)
+        datetime.datetime(2022, 9, 7, 9, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 7, 15, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 7, 21, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 8, 3, tzinfo=datetime.timezone.utc)#,
+#        datetime.datetime(2022, 9, 7, 18, tzinfo=datetime.timezone.utc)
     ]
 
 # Restraining the initial values for the ensemble members leads to more efficient fitting.
@@ -78,16 +79,24 @@ if __name__ == "__main__":
            }, 
            "cme_launch_velocity": {
                "maximum": 1700,
-               "minimum": 800
+               "minimum": 500
            },
            "cme_launch_radius": {
                "maximum": 20,
                "minimum": 10
-           }
+           },
+           #"t_factor": {
+           #    "maximum": 250,
+           #    "minimum": 0
+           #},
+            "background_velocity": {
+               "maximum": 600,
+               "minimum": 200
+           } 
         }
     }
 
-    output = 'solo06092022_heeq_512_4FP/'
+    output = 'solo06092022_heeq_512_4FP_allP_2/'
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
