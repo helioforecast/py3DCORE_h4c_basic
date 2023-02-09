@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("heliosat.spice").setLevel("WARNING")
 logging.getLogger("heliosat.spacecraft").setLevel("WARNING")
 
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 9, 5, 18, 45, tzinfo=datetime.timezone.utc) # launch time assumed at CME impact at PSP at 14.72 Rs
@@ -65,8 +66,8 @@ if __name__ == "__main__":
         "ensemble_size": int(2**16), #2**17
         "iparams": {
            "cme_longitude": {
-               "maximum": 180,
-               "minimum": -180
+               "maximum": 360,
+               "minimum": 0
            },
            "cme_latitude": {
                "maximum": 10,
@@ -98,8 +99,18 @@ if __name__ == "__main__":
            } 
         }
     }
-
+    
+    
     output = 'solo06092022_heeq_512_restrP_2/'
+    
+
+    # Deleting a non-empty folder
+    try:
+        shutil.rmtree('output/' + output, ignore_errors=True)
+        logger.info("Successfully cleaned %s" , output)
+    except:
+        pass
+
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)

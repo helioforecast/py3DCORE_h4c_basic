@@ -335,8 +335,8 @@ class SimulationBlackBox(object):
 
     def visualize_shape(self, *args: Any, **kwargs: Any) -> np.ndarray:
         raise NotImplementedError
-
-
+   
+        
 @numba.njit(fastmath=True)
 def _numba_perturb_select_weights(size: np.ndarray, weights_old: np.ndarray) -> np.ndarray:
     

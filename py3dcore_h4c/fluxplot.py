@@ -1,13 +1,18 @@
 import os
 
 import numpy as np
+import pickle as p
+import pandas as pds
+import seaborn as sns
 
 import datetime as datetime
 from datetime import timedelta
 import py3dcore_h4c
-from py3dcore_h4c.fitter.base import custom_observer
+from py3dcore_h4c.fitter.base import custom_observer, BaseFitter, get_ensemble_mean
 
 from py3dcore_h4c.models.toroidal import thin_torus_gh, thin_torus_qs, thin_torus_sq
+
+from .rotqs import generate_quaternions
 
 import matplotlib.pyplot as plt
 
@@ -18,6 +23,90 @@ import py3dcore_h4c.measure as ms
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def get_params(filepath, give_mineps = False):
+    
+    """ Gets params from file. """
+    
+    # read from pickle file
+    file = open(filepath, "rb")
+    data = p.load(file)
+    file.close()
+    
+    model_objt = data["model_obj"]
+    maxiter=model_objt.ensemble_size-1
+
+    # get index ip for run with minimum eps    
+    epses_t = data["epses"]
+    ip = np.argmin(epses_t[0:maxiter])    
+    
+    # get parameters (stored in iparams_arr) for the run with minimum eps
+    
+    iparams_arrt = model_objt.iparams_arr
+    
+    resparams = iparams_arrt[ip]
+    
+    names = ['lon: ', 'lat: ', 'inc: ', 'dia: ', 'aspect ratio: ', 'launch radius: ', 'launch speed: ', 'T factor: ', 'expansion rate: ', 'magnetic field decay rate: ', 'magnetic field 1 AU: ', 'drag coefficient: ', 'sw background speed: ']
+    if give_mineps == True:
+        logger.info("Retrieved the following parameters for the run with minimum epsilon:")
+    
+        for count, name in enumerate(names):
+            logger.info(" --{} {:.2f}".format(name, resparams[count+1]))
+
+    return resparams, iparams_arrt, ip
+
+def get_ensemble_stats(filepath):
+    
+    ftobj = BaseFitter(filepath) # load Fitter from path
+    model_obj = ftobj.model_obj
+    
+    df = pds.DataFrame(model_obj.iparams_arr)
+    cols = df.columns.values.tolist()
+
+    # drop first column, and others in which you are not interested
+    df.drop(df.columns[[0, 9, 10]], axis=1, inplace=True)
+
+    # rename columns
+    df.columns = ['lon', 'lat', 'inc', 'D1AU', 'delta', 'launch radius', 'init speed', 't factor', 'B1AU', 'gamma', 'vsw']
+    
+    df.describe()
+    
+    return df
+    
+
+def scatterparams(path):
+    
+    res, iparams_arrt, ind = get_params(path)
+    
+    df = pds.DataFrame(iparams_arrt)
+    cols = df.columns.values.tolist()
+
+    # drop first column, and others in which you are not interested
+    df.drop(df.columns[[0, 9, 10]], axis=1, inplace=True)
+
+    # rename columns
+    df.columns = ['lon', 'lat', 'inc', 'D1AU', 'delta', 'launch radius', 'init speed', 't factor', 'B1AU', 'gamma', 'vsw']
+    
+    sns.set_style('white')
+    sns.set()
+
+    g = sns.pairplot(df, 
+                     corner=True,
+                     plot_kws=dict(marker="+", linewidth=1)
+                    )
+    g.map_lower(sns.kdeplot, levels=[0.05, 0.32], color=".2") #  levels are 2-sigma and 1-sigma contours
+    g.savefig(path+'scatter_plot_matrix.png')
+    plt.show()
+    
+
+def equal_t_creator(start,n,delta):
+    
+    """ Creates a list of n datetime entries separated by delta hours starting at start. """
+    
+    t = [start + i * datetime.timedelta(hours=delta) for i in range(n)]
+    
+    return t
 
 def loadpickle(path = None, number = -1):
 
@@ -38,9 +127,11 @@ def loadpickle(path = None, number = -1):
 
     return filepath
 
-def standardplot(observer= 'solo', t_fit=None, start = None, end=None, filepath=None, custom_data=False, save_fig = True):
+
+def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, custom_data=False, save_fig = True, best = True, ensemble = True, mean = False, fixed = None):
+    
     """
-    Plots the insitu data plus the fitted results.
+    Plots the synthetic insitu data plus the measured insitu data and ensemble fit.
 
     Arguments:
         observer          name of the observer
@@ -55,7 +146,7 @@ def standardplot(observer= 'solo', t_fit=None, start = None, end=None, filepath=
     Returns:
         None
     """
-         
+    
     if start == None:
         start = t_fit[0]
 
@@ -68,32 +159,92 @@ def standardplot(observer= 'solo', t_fit=None, start = None, end=None, filepath=
         logger.info("Using HelioSat to retrieve observer data")
     else:
         observer_obj = custom_observer(custom_data)
-        logger.info("Using custom datafile: %s", custom_data)
         
     t, b = observer_obj.get([start, end], "mag", reference_frame="HEEQ", as_endpoints=True)
     
+    pos = observer_obj.trajectory(t, reference_frame="HEEQ")
+    
+    if best == True:
+        model_obj = returnfixedmodel(filepath)
+        
+        outa = np.squeeze(np.array(model_obj.simulator(t, pos))[0])
+        outa[outa==0] = np.nan
+        
+    if fixed is not None:
+        model_obj = returnfixedmodel(filepath, fixed)
+        
+        outa = np.squeeze(np.array(model_obj.simulator(t, pos))[0])
+        outa[outa==0] = np.nan
+    
+    if mean == True:
+        means = get_ensemble_mean(filepath, t, reference_frame="HEEQ",reference_frame_to="HEEQ", max_index=128, custom_data=custom_data)
+    
     # get ensemble_data
-    ed = py3dcore_h4c.generate_ensemble(filepath, t, reference_frame="HEEQ",reference_frame_to="HEEQ", max_index=128, custom_data=custom_data)
+    if ensemble == True:
+        ed = py3dcore_h4c.generate_ensemble(filepath, t, reference_frame="HEEQ",reference_frame_to="HEEQ", max_index=128, custom_data=custom_data)
 
     plt.figure(figsize=(28, 12))
     plt.title(observer+ " fitting result")
-    plt.plot(t, np.sqrt(np.sum(b**2, axis=1)), "k", alpha=0.5)
-    plt.plot(t, b[:, 0], "r", alpha=0.5)
-    plt.plot(t, b[:, 1], "g", alpha=0.5)
-    plt.plot(t, b[:, 2], "b", alpha=0.5)
-    plt.fill_between(t, ed[0][3][0], ed[0][3][1], alpha=0.25, color="k")
-    plt.fill_between(t, ed[0][2][0][:, 0], ed[0][2][1][:, 0], alpha=0.25, color="r")
-    plt.fill_between(t, ed[0][2][0][:, 1], ed[0][2][1][:, 1], alpha=0.25, color="g")
-    plt.fill_between(t, ed[0][2][0][:, 2], ed[0][2][1][:, 2], alpha=0.25, color="b")
+    plt.plot(t, np.sqrt(np.sum(b**2, axis=1)), "k", alpha=0.5, label ='insitu data')
+    plt.plot(t, b[:, 0], "r", alpha=1)
+    plt.plot(t, b[:, 1], "g", alpha=1)
+    plt.plot(t, b[:, 2], "b", alpha=1)
+    if ensemble == True:
+        plt.fill_between(t, ed[0][3][0], ed[0][3][1], alpha=0.25, color="k")
+        plt.fill_between(t, ed[0][2][0][:, 0], ed[0][2][1][:, 0], alpha=0.25, color="r")
+        plt.fill_between(t, ed[0][2][0][:, 1], ed[0][2][1][:, 1], alpha=0.25, color="g")
+        plt.fill_between(t, ed[0][2][0][:, 2], ed[0][2][1][:, 2], alpha=0.25, color="b")
+        
+    if best == True:
+        plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5,linestyle='dashed', linewidth=3, label ='run with min_eps')
+        plt.plot(t, outa[:, 0], "r", alpha=0.5,linestyle='dashed', linewidth=3)
+        plt.plot(t, outa[:, 1], "g", alpha=0.5,linestyle='dashed', linewidth=3)
+        plt.plot(t, outa[:, 2], "b", alpha=0.5,linestyle='dashed', linewidth=3)
+        
+    if mean == True:
+        plt.plot(t, np.sqrt(np.sum(means**2, axis=1)), "k", alpha=0.5,linestyle='dashdot', linewidth=5, label ='mean')
+        plt.plot(t, means[:, 0], "r", alpha=0.75,linestyle='dashdot', linewidth=5)
+        plt.plot(t, means[:, 1], "g", alpha=0.75,linestyle='dashdot', linewidth=5)
+        plt.plot(t, means[:, 2], "b", alpha=0.75,linestyle='dashdot', linewidth=5)
+        
     plt.ylabel("B [nT]")
     plt.xlabel("Time [MM-DD HH]")
+    plt.legend()
     for _ in t_fit:
         plt.axvline(x=_, lw=1, alpha=0.25, color="k", ls="--")
     if save_fig == True:
         plt.savefig('%s.png' %filepath)    
     plt.show()
 
-
+    
+def returnfixedmodel(filepath, fixed_iparams_arr=None):
+    
+    ftobj = BaseFitter(filepath) # load Fitter from path
+    model_obj = ftobj.model_obj
+    
+    model_obj.ensemble_size = 1
+    
+    if fixed_iparams_arr == None:
+        logger.info("No iparams_arr given, using parameters for run with minimum eps.")
+        res, allres, ind = get_params(filepath, )
+        model_obj.iparams_arr = np.expand_dims(res, axis=0)
+    
+    model_obj.sparams_arr = np.empty((model_obj.ensemble_size, model_obj.sparams), dtype=model_obj.dtype)
+    model_obj.qs_sx = np.empty((model_obj.ensemble_size, 4), dtype=model_obj.dtype)
+    model_obj.qs_xs = np.empty((model_obj.ensemble_size, 4), dtype=model_obj.dtype)
+    
+    model_obj.iparams_meta = np.empty((len(model_obj.iparams), 7), dtype=model_obj.dtype)
+    
+    #iparams_meta is updated
+    generate_quaternions(model_obj.iparams_arr, model_obj.qs_sx, model_obj.qs_xs)
+    return model_obj
+    
+    
+    
+    
+    
+    
+    
 def plot_configure(ax, **kwargs):
     view_azim = kwargs.pop("view_azim", -25)
     view_elev = kwargs.pop("view_elev", 25)

@@ -13,8 +13,8 @@
         "index": 1,
         "name": "longitude",
         "distribution": "uniform",
-        "maximum": 180,
-        "minimum": -180,
+        "maximum": 360,
+        "minimum": 0,
         "boundary": "periodic",
         "label": "lon"
     },

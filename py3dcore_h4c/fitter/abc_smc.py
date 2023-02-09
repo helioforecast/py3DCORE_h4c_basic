@@ -98,6 +98,9 @@ class ABC_SMC(BaseFitter):
         eps_quantile = kwargs.pop("eps_quantile", 0.25) # which quantile to use for the new eps
         kernel_mode = kwargs.pop("kernel_mode", "cm") # kernel mode for perturbing the iparams - covariance matrix
         output = kwargs.get("output", None) # If output is set, results are saved to a file
+        
+        if output is not None:
+            output = "output/" + output
         random_seed = kwargs.pop("random_seed", 42) # set random seed to ensure reproducible results
         summary_type = kwargs.pop("summary_statistic", "norm_rmse") # summary statistic used to measure the error of a fit
         time_offsets = kwargs.pop("time_offsets", [0]) # value used to correct arrival times at observers
@@ -106,7 +109,6 @@ class ABC_SMC(BaseFitter):
         jobs = kwargs.pop("jobs", workers) # number of jobs
         use_multiprocessing = kwargs.pop("use_multiprocessing", False) # Whether to use multiprocessing 
         custom_data = kwargs.pop("custom_data", False)
-        
         
 
         mpool = multiprocessing.Pool(processes=workers) # initialize Pool for multiprocessing
@@ -290,6 +292,7 @@ class ABC_SMC(BaseFitter):
                 # save output to file 
                 if output:
                     output_file = os.path.join(output, "{0:02d}.pickle".format(self.iter_i - 1))
+                    logger.info("Saved to %s", output_file)
 
                     extra_args = {
                         "model_obj": model_obj,

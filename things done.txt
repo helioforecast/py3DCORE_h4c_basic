@@ -1,0 +1,2 @@
+---- merged plotting_getting_params* into plottingroutine_solo_06092022.ipynb
+---- merged insitumag* into  plottingroutine_solo_06092022.ipynb
