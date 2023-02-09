@@ -69,33 +69,33 @@ if __name__ == "__main__":
                "minimum": -180
            },
            "cme_latitude": {
-               "maximum": 90,
-               "minimum": -90
+               "maximum": 20,
+               "minimum": -50
            },
            "cme_inclination": {
-               "maximum": 90,
+               "maximum": 50,
                "minimum": 0
            }, 
            "cme_launch_velocity": {
                "maximum": 1800,
-               "minimum": 500
+               "minimum": 800
            },
            "cme_launch_radius": {
                "maximum": 30,
                "minimum": 10
            },
-           #"t_factor": {
-           #    "maximum": 250,
-           #    "minimum": 0
-           #},
+           "t_factor": {
+               "maximum": 250,
+               "minimum": 0
+           },
             "background_velocity": {
-               "maximum": 800,
-               "minimum": 200
+               "maximum": 700,
+               "minimum": 400
            } 
         }
     }
 
-    output = 'solo06092022_heeq_512_allP/'
+    output = 'solo06092022_heeq_512_restrP/'
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
