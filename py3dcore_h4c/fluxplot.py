@@ -11,6 +11,8 @@ import datetime as datetime
 from datetime import timedelta
 import py3dcore_h4c
 from py3dcore_h4c.fitter.base import custom_observer, BaseFitter, get_ensemble_mean
+    
+from scipy.optimize import least_squares
 
 from py3dcore_h4c.models.toroidal import thin_torus_gh, thin_torus_qs, thin_torus_sq
 
@@ -34,11 +36,62 @@ import matplotlib.dates as mdates
 
 from itertools import product
 
-import py3dcore_h4c.measure as ms
-
 import logging
 
 logger = logging.getLogger(__name__)
+
+def get_overwrite(out):
+    
+    """ creates iparams from parameter statistic"""
+    
+    overwrite = {
+        "cme_longitude": {
+                "maximum": out['lon'].mean()+out['lon'].std(),
+                "minimum": out['lon'].mean()-out['lon'].std()
+            },
+        "cme_latitude": {
+                "maximum": out['lat'].mean()+out['lat'].std(),
+                "minimum": out['lat'].mean()-out['lat'].std()
+            },
+        "cme_inclination" :{
+                "maximum": out['inc'].mean()+out['inc'].std(),
+                "minimum": out['inc'].mean()-out['inc'].std()
+            },
+        "cme_diameter_1au" :{
+                "maximum": out['D1AU'].mean()+out['D1AU'].std(),
+                "minimum": out['D1AU'].mean()-out['D1AU'].std()
+            },
+        "cme_aspect_ratio": {
+                "maximum": out['delta'].mean()+out['delta'].std(),
+                "minimum": out['delta'].mean()-out['delta'].std()
+            },
+        "cme_launch_radius": {
+                "maximum": out['launch radius'].mean()+out['launch radius'].std(),
+                "minimum": out['launch radius'].mean()-out['launch radius'].std()
+            },
+        "cme_launch_velocity": {
+                "maximum": out['launch speed'].mean()+out['launch speed'].std(),
+                "minimum": out['launch speed'].mean()-out['launch speed'].std()
+            },
+        "t_factor": {
+                "maximum": out['t factor'].mean()+out['t factor'].std(),
+                "minimum": out['t factor'].mean()-out['t factor'].std()
+            },
+        "magnetic_field_strength_1au": {
+                "maximum": out['B1AU'].mean()+out['B1AU'].std(),
+                "minimum": out['B1AU'].mean()-out['B1AU'].std()
+            },
+        "background_drag": {
+                "maximum": out['gamma'].mean()+out['gamma'].std(),
+                "minimum": out['gamma'].mean()-out['gamma'].std()
+            },
+        "background_velocity": {
+                "maximum": out['vsw'].mean()+out['vsw'].std(),
+                "minimum": out['vsw'].mean()-out['vsw'].std()
+            }
+    }
+    
+    return overwrite
 
 
 def get_params(filepath, give_mineps = False):
@@ -61,6 +114,8 @@ def get_params(filepath, give_mineps = False):
     
     iparams_arrt = model_objt.iparams_arr
     
+    meanparams = np.mean(model_objt.iparams_arr, axis=0)
+    
     resparams = iparams_arrt[ip]
     
     names = ['lon: ', 'lat: ', 'inc: ', 'diameter 1 AU: ', 'aspect ratio: ', 'launch radius: ', 'launch speed: ', 't factor: ', 'expansion rate: ', 'magnetic field decay rate: ', 'magnetic field 1 AU: ', 'drag coefficient: ', 'sw background speed: ']
@@ -70,7 +125,7 @@ def get_params(filepath, give_mineps = False):
         for count, name in enumerate(names):
             logger.info(" --{} {:.2f}".format(name, resparams[count+1]))
 
-    return resparams, iparams_arrt, ip
+    return resparams, iparams_arrt, ip, meanparams
 
 def get_ensemble_stats(filepath):
     
@@ -191,7 +246,10 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
         outa[outa==0] = np.nan
     
     if mean == True:
-        means = get_ensemble_mean(filepath, t, reference_frame="HEEQ",reference_frame_to="HEEQ", max_index=128, custom_data=custom_data)
+        model_obj = returnfixedmodel(filepath, fixed_iparams_arr='mean')
+        
+        means = np.squeeze(np.array(model_obj.simulator(t, pos))[0])
+        means[means==0] = np.nan
     
     # get ensemble_data
     if ensemble == True:
@@ -221,17 +279,22 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
         plt.fill_between(t, ed[0][2][0][:, 1], ed[0][2][1][:, 1], alpha=0.25, color="g")
         plt.fill_between(t, ed[0][2][0][:, 2], ed[0][2][1][:, 2], alpha=0.25, color="b")
         
-    if best == True:
-        plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best, label ='run with min(eps)')
+    if (best == True) or (fixed is not None):
+        if best == True:
+            plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best)#, label ='run with min(eps)')
+        else:
+            plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best)#, label ='run with fixed iparams')
         plt.plot(t, outa[:, 0], "r", alpha=0.5,linestyle='dashed', lw=lw_best)
         plt.plot(t, outa[:, 1], "g", alpha=0.5,linestyle='dashed', lw=lw_best)
         plt.plot(t, outa[:, 2], "b", alpha=0.5,linestyle='dashed', lw=lw_best)
         
     if mean == True:
-        plt.plot(t, np.sqrt(np.sum(means**2, axis=1)), "k", alpha=0.5, linestyle='dashdot', lw=lw_mean)#, label ='mean')
+        plt.plot(t, np.sqrt(np.sum(means**2, axis=1)), "k", alpha=0.5, linestyle='dashdot', lw=lw_mean)#, label ='run with mean iparams')
         plt.plot(t, means[:, 0], "r", alpha=0.75,linestyle='dashdot', lw=lw_mean)
         plt.plot(t, means[:, 1], "g", alpha=0.75,linestyle='dashdot', lw=lw_mean)
         plt.plot(t, means[:, 2], "b", alpha=0.75,linestyle='dashdot', lw=lw_mean)
+        
+        
         
     date_form = mdates.DateFormatter("%h %d %H")
     plt.gca().xaxis.set_major_formatter(date_form)
@@ -255,10 +318,19 @@ def returnfixedmodel(filepath, fixed_iparams_arr=None):
     
     model_obj.ensemble_size = 1
     
-    if fixed_iparams_arr == None:
+    if fixed_iparams_arr == 'mean':
+        logger.info("Plotting run with mean parameters.")
+        res, allres, ind, meanparams = get_params(filepath)
+        model_obj.iparams_arr = np.expand_dims(meanparams, axis=0)
+    
+    elif (fixed_iparams_arr == None).any():
         logger.info("No iparams_arr given, using parameters for run with minimum eps.")
-        res, allres, ind = get_params(filepath, )
+        res, allres, ind, meanparams = get_params(filepath)
         model_obj.iparams_arr = np.expand_dims(res, axis=0)
+    
+    else:
+        logger.info("Plotting run with fixed parameters.")
+        model_obj.iparams_arr = np.expand_dims(fixed_iparams_arr, axis=0)
     
     model_obj.sparams_arr = np.empty((model_obj.ensemble_size, model_obj.sparams), dtype=model_obj.dtype)
     model_obj.qs_sx = np.empty((model_obj.ensemble_size, 4), dtype=model_obj.dtype)
@@ -305,7 +377,7 @@ def plot_3dcore_field(ax, obj, step_size=0.005, q0=[0.8, .1, np.pi/2],**kwargs):
 
     #initial point is q0
     q0i =np.array(q0, dtype=np.float32)
-    fl = ms.visualize_fieldline(obj, q0, index=0, steps=1000, step_size=step_size)
+    fl = visualize_fieldline(obj, q0, index=0, steps=1000, step_size=step_size)
     #fl = model_obj.visualize_fieldline_dpsi(q0i, dpsi=2*np.pi-0.01, step_size=step_size)
     ax.plot(*fl.T, **kwargs)
     
@@ -349,8 +421,15 @@ def plot_circle(ax,dist,**kwargs):
     zc=0
     ax.plot(xc,yc,zc,ls='--',color='black',lw=0.3,**kwargs)
       
-
 def plot_satellite(ax,satpos1,**kwargs):
+
+    xc=satpos1[0]*np.cos(np.radians(satpos1[1]))
+    yc=satpos1[0]*np.sin(np.radians(satpos1[1]))
+    zc=0
+    #print(xc,yc,zc)
+    ax.scatter3D(xc,yc,zc,marker ='s',**kwargs)
+        
+def plot_planet(ax,satpos1,**kwargs):
 
     xc=satpos1[0]*np.cos(np.radians(satpos1[1]))
     yc=satpos1[0]*np.sin(np.radians(satpos1[1]))
@@ -387,3 +466,54 @@ def visualize_wireframe(obj, index=0, r=1.0, d=10):
             thin_torus_qs(arr[i], arr[i], obj.iparams_arr[index], obj.sparams_arr[index], obj.qs_xs[index])
 
         return arr.reshape((c, c, 3))
+    
+
+def visualize_fieldline(obj, q0, index=0, steps=1000, step_size=0.01):
+    
+        """Integrates along the magnetic field lines starting at a point q0 in (q) coordinates and
+        returns the field lines in (s) coordinates.
+
+        Parameters
+        ----------
+        q0 : np.ndarray
+            Starting point in (q) coordinates.
+        index : int, optional
+            Model run index, by default 0.
+        steps : int, optional
+            Number of integration steps, by default 1000.
+        step_size : float, optional
+            Integration step size, by default 0.01.
+
+        Returns
+        -------
+        np.ndarray
+            Integrated magnetic field lines in (s) coordinates.
+        """
+
+        _tva = np.empty((3,), dtype=obj.dtype)
+        _tvb = np.empty((3,), dtype=obj.dtype)
+
+        thin_torus_qs(q0, obj.iparams_arr[index], obj.sparams_arr[index], obj.qs_xs[index], _tva)
+
+        fl = [np.array(_tva, dtype=obj.dtype)]
+        def iterate(s):
+            thin_torus_sq(s, obj.iparams_arr[index], obj.sparams_arr[index], obj.qs_sx[index],_tva)
+            thin_torus_gh(_tva, obj.iparams_arr[index], obj.sparams_arr[index], obj.qs_xs[index], _tvb)
+            return _tvb / np.linalg.norm(_tvb)
+
+        while len(fl) < steps:
+            # use implicit method and least squares for calculating the next step
+            try:
+                sol = getattr(least_squares(
+                    lambda x: x - fl[-1] - step_size *
+                    iterate((x.astype(obj.dtype) + fl[-1]) / 2),
+                    fl[-1]), "x")
+
+                fl.append(np.array(sol.astype(obj.dtype)))
+            except Exception as e:
+                print("ERROR")
+                break
+
+        fl = np.array(fl, dtype=obj.dtype)
+
+        return fl
