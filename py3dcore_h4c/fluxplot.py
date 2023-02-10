@@ -4,6 +4,8 @@ import numpy as np
 import pickle as p
 import pandas as pds
 import seaborn as sns
+sns.set_style('whitegrid')
+sns.set_context('paper')
 
 import datetime as datetime
 from datetime import timedelta
@@ -15,6 +17,20 @@ from py3dcore_h4c.models.toroidal import thin_torus_gh, thin_torus_qs, thin_toru
 from .rotqs import generate_quaternions
 
 import matplotlib.pyplot as plt
+
+SMALL_SIZE = 20
+MEDIUM_SIZE = 22
+BIGGER_SIZE = 24
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+# plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=SMALL_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('axes', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
+import matplotlib.dates as mdates
 
 from itertools import product
 
@@ -35,7 +51,7 @@ def get_params(filepath, give_mineps = False):
     file.close()
     
     model_objt = data["model_obj"]
-    maxiter=model_objt.ensemble_size-1
+    maxiter = model_objt.ensemble_size-1
 
     # get index ip for run with minimum eps    
     epses_t = data["epses"]
@@ -47,7 +63,7 @@ def get_params(filepath, give_mineps = False):
     
     resparams = iparams_arrt[ip]
     
-    names = ['lon: ', 'lat: ', 'inc: ', 'dia: ', 'aspect ratio: ', 'launch radius: ', 'launch speed: ', 'T factor: ', 'expansion rate: ', 'magnetic field decay rate: ', 'magnetic field 1 AU: ', 'drag coefficient: ', 'sw background speed: ']
+    names = ['lon: ', 'lat: ', 'inc: ', 'diameter 1 AU: ', 'aspect ratio: ', 'launch radius: ', 'launch speed: ', 't factor: ', 'expansion rate: ', 'magnetic field decay rate: ', 'magnetic field 1 AU: ', 'drag coefficient: ', 'sw background speed: ']
     if give_mineps == True:
         logger.info("Retrieved the following parameters for the run with minimum epsilon:")
     
@@ -68,7 +84,7 @@ def get_ensemble_stats(filepath):
     df.drop(df.columns[[0, 9, 10]], axis=1, inplace=True)
 
     # rename columns
-    df.columns = ['lon', 'lat', 'inc', 'D1AU', 'delta', 'launch radius', 'init speed', 't factor', 'B1AU', 'gamma', 'vsw']
+    df.columns = ['lon', 'lat', 'inc', 'D1AU', 'delta', 'launch radius', 'launch speed', 't factor', 'B1AU', 'gamma', 'vsw']
     
     df.describe()
     
@@ -86,10 +102,7 @@ def scatterparams(path):
     df.drop(df.columns[[0, 9, 10]], axis=1, inplace=True)
 
     # rename columns
-    df.columns = ['lon', 'lat', 'inc', 'D1AU', 'delta', 'launch radius', 'init speed', 't factor', 'B1AU', 'gamma', 'vsw']
-    
-    sns.set_style('white')
-    sns.set()
+    df.columns = ['lon', 'lat', 'inc', 'D1AU', 'delta', 'launch radius', 'launch speed', 't factor', 'B1AU', 'gamma', 'vsw']
 
     g = sns.pairplot(df, 
                      corner=True,
@@ -128,7 +141,7 @@ def loadpickle(path = None, number = -1):
     return filepath
 
 
-def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, custom_data=False, save_fig = True, best = True, ensemble = True, mean = False, fixed = None):
+def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, custom_data=False, save_fig = True, best = True, ensemble = True, mean = False, legend=True, fixed = None):
     
     """
     Plots the synthetic insitu data plus the measured insitu data and ensemble fit.
@@ -142,6 +155,7 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
         number            which result to use
         custom_data       path to custom data, otherwise heliosat is used
         save_fig          whether to save the created figure
+        legend            whether to plot legend 
 
     Returns:
         None
@@ -182,13 +196,25 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
     # get ensemble_data
     if ensemble == True:
         ed = py3dcore_h4c.generate_ensemble(filepath, t, reference_frame="HEEQ",reference_frame_to="HEEQ", max_index=128, custom_data=custom_data)
+    
+    lw_insitu = 2  # linewidth for plotting the in situ data
+    lw_best = 3  # linewidth for plotting the min(eps) run
+    lw_mean = 3  # linewidth for plotting the mean run
+    lw_fitp = 2  # linewidth for plotting the lines where fitting points
+    
+    if observer == 'solo':
+        obs_title = 'Solar Orbiter'
 
-    plt.figure(figsize=(28, 12))
-    plt.title(observer+ " fitting result")
-    plt.plot(t, np.sqrt(np.sum(b**2, axis=1)), "k", alpha=0.5, label ='insitu data')
-    plt.plot(t, b[:, 0], "r", alpha=1)
-    plt.plot(t, b[:, 1], "g", alpha=1)
-    plt.plot(t, b[:, 2], "b", alpha=1)
+        
+    if observer == 'psp':
+        obs_title = 'Parker Solar Probe'
+
+    plt.figure(figsize=(20, 10))
+    plt.title("3DCORE fitting result - "+obs_title)
+    plt.plot(t, np.sqrt(np.sum(b**2, axis=1)), "k", alpha=0.5, lw=3, label ='Btotal')
+    plt.plot(t, b[:, 0], "r", alpha=1, lw=lw_insitu, label ='Br')
+    plt.plot(t, b[:, 1], "g", alpha=1, lw=lw_insitu, label ='Bt')
+    plt.plot(t, b[:, 2], "b", alpha=1, lw=lw_insitu, label ='Bn')
     if ensemble == True:
         plt.fill_between(t, ed[0][3][0], ed[0][3][1], alpha=0.25, color="k")
         plt.fill_between(t, ed[0][2][0][:, 0], ed[0][2][1][:, 0], alpha=0.25, color="r")
@@ -196,24 +222,29 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
         plt.fill_between(t, ed[0][2][0][:, 2], ed[0][2][1][:, 2], alpha=0.25, color="b")
         
     if best == True:
-        plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5,linestyle='dashed', linewidth=3, label ='run with min_eps')
-        plt.plot(t, outa[:, 0], "r", alpha=0.5,linestyle='dashed', linewidth=3)
-        plt.plot(t, outa[:, 1], "g", alpha=0.5,linestyle='dashed', linewidth=3)
-        plt.plot(t, outa[:, 2], "b", alpha=0.5,linestyle='dashed', linewidth=3)
+        plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best, label ='run with min(eps)')
+        plt.plot(t, outa[:, 0], "r", alpha=0.5,linestyle='dashed', lw=lw_best)
+        plt.plot(t, outa[:, 1], "g", alpha=0.5,linestyle='dashed', lw=lw_best)
+        plt.plot(t, outa[:, 2], "b", alpha=0.5,linestyle='dashed', lw=lw_best)
         
     if mean == True:
-        plt.plot(t, np.sqrt(np.sum(means**2, axis=1)), "k", alpha=0.5,linestyle='dashdot', linewidth=5, label ='mean')
-        plt.plot(t, means[:, 0], "r", alpha=0.75,linestyle='dashdot', linewidth=5)
-        plt.plot(t, means[:, 1], "g", alpha=0.75,linestyle='dashdot', linewidth=5)
-        plt.plot(t, means[:, 2], "b", alpha=0.75,linestyle='dashdot', linewidth=5)
+        plt.plot(t, np.sqrt(np.sum(means**2, axis=1)), "k", alpha=0.5, linestyle='dashdot', lw=lw_mean)#, label ='mean')
+        plt.plot(t, means[:, 0], "r", alpha=0.75,linestyle='dashdot', lw=lw_mean)
+        plt.plot(t, means[:, 1], "g", alpha=0.75,linestyle='dashdot', lw=lw_mean)
+        plt.plot(t, means[:, 2], "b", alpha=0.75,linestyle='dashdot', lw=lw_mean)
         
+    date_form = mdates.DateFormatter("%h %d %H")
+    plt.gca().xaxis.set_major_formatter(date_form)
+           
     plt.ylabel("B [nT]")
-    plt.xlabel("Time [MM-DD HH]")
-    plt.legend()
+    # plt.xlabel("Time")
+    plt.xticks(rotation=25, ha='right')
+    if legend == True:
+        plt.legend(loc='lower right')
     for _ in t_fit:
-        plt.axvline(x=_, lw=1, alpha=0.25, color="k", ls="--")
+        plt.axvline(x=_, lw=lw_fitp, alpha=0.25, color="k", ls="--")
     if save_fig == True:
-        plt.savefig('%s.png' %filepath)    
+        plt.savefig('%s.png' %filepath, dpi=300)    
     plt.show()
 
     
