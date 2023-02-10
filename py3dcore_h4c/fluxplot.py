@@ -11,6 +11,9 @@ import datetime as datetime
 from datetime import timedelta
 import py3dcore_h4c
 from py3dcore_h4c.fitter.base import custom_observer, BaseFitter, get_ensemble_mean
+
+from sunpy.coordinates import frames, get_horizons_coord
+
     
 from scipy.optimize import least_squares
 
@@ -148,7 +151,7 @@ def get_ensemble_stats(filepath):
 
 def scatterparams(path):
     
-    res, iparams_arrt, ind = get_params(path)
+    res, iparams_arrt, ind, meanparams = get_params(path)
     
     df = pds.DataFrame(iparams_arrt)
     cols = df.columns.values.tolist()
@@ -195,6 +198,140 @@ def loadpickle(path = None, number = -1):
 
     return filepath
 
+def returnmodel(filepath):
+    
+    t_launch = BaseFitter(filepath).dt_0
+    
+    out = get_ensemble_stats(filepath)
+    overwrite = get_overwrite(out)
+    
+    model_obj = py3dcore_h4c.ToroidalModel(t_launch, 1, iparams=overwrite)
+    
+    model_obj.generator()
+    
+    return model_obj
+
+def getpos(sc, date, start, end):
+    
+    
+    coord = get_horizons_coord(sc, time={'start': start, 'stop': end, 'step': '60m'})  
+    heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+    hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+
+    time=heeq.obstime.to_datetime()
+    r=heeq.radius.value
+    lon=np.deg2rad(heeq.lon.value)
+    lat=np.deg2rad(heeq.lat.value)
+    
+    # get position of Solar Orbiter for specific date
+
+    t = []
+
+    for i in range(len(time)):
+        tt = time[i].strftime('%Y-%m-%d-%H')
+        t.append(tt)
+
+    ind = t.index(date)    
+    logger.info("Indices of date: %i", ind)
+    
+    logger.info("%s - r: %f, lon: %f, lat: %f, ", sc, r[ind], np.rad2deg(lon[ind]),np.rad2deg(lat[ind]))
+    
+    pos= np.asarray([r[ind],np.rad2deg(lon[ind]), np.rad2deg(lat[ind])])
+    
+    traj = np.asarray([r,np.rad2deg(lon), np.rad2deg(lat)])
+
+    return t, pos, traj
+
+def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, start = '2022-09-01', end = '2022-09-15', traj = False, filepath=None, custom_data=False, save_fig = True, legend = True, title = True):
+    
+    """
+    Plots 3d.
+    """
+    
+    #colors for 3dplots
+
+    c0 = 'mediumseagreen'
+    c1 = "xkcd:red"
+    c2 = "xkcd:blue"
+    
+    #Color settings    
+    C_A = "xkcd:red"
+    C_B = "xkcd:blue"
+
+    C0 = "xkcd:black"
+    C1 = "xkcd:magenta"
+    C2 = "xkcd:orange"
+    C3 = "xkcd:azure"
+
+    earth_color='blue'
+    solo_color='orange'
+    venus_color='mediumseagreen'
+    mercury_color='grey'
+    psp_color='black'
+    sta_color='red'
+    bepi_color='coral' 
+    
+    sns.set_context("talk")     
+
+    sns.set_style("ticks",{'grid.linestyle': '--'})
+    fsize=15
+
+    fig=plt.figure(1,figsize=(12,9),dpi=70)
+    ax = fig.add_subplot(111, projection='3d')
+    
+    plot_configure(ax, view_azim=0, view_elev=90, view_radius=0.8)
+    
+    model_obj = returnmodel(filepath)
+    
+    plot_3dcore(ax, model_obj, t, color=c2)
+    plot_3dcore_field(ax, model_obj, color=c2, step_size=0.005, lw=1.1, ls="-")
+    
+
+    
+    if 'solo' in spacecraftlist:
+        t_solo, pos_solo, traj_solo = getpos('Solar Orbiter', t.strftime('%Y-%m-%d-%H'), start, end)
+        plot_satellite(ax,pos_solo,color=solo_color,alpha=0.9, label = 'Solar Orbiter')
+        plot_circle(ax,pos_solo[0])  
+        if traj == True:
+             ax.plot(traj_solo[0]*np.sin(traj_solo[1]),traj_solo[0]*np.cos(traj_solo[1]),0, color=solo_color,alpha=0.9)
+
+        
+    if 'psp' in spacecraftlist:
+        t_psp, pos_psp, traj_psp  = getpos('Parker Solar Probe', t.strftime('%Y-%m-%d-%H'), start, end)
+        plot_satellite(ax,pos_psp,color=psp_color,alpha=0.9, label ='Parker Solar Probe')
+        if traj == True:
+             ax.plot(traj_psp[0]*np.sin(np.radians(traj_psp[1])),traj_psp[0]*np.cos(np.radians(traj_psp[1])),0, color=psp_color,alpha=0.9)
+                
+                
+    if 'STEREO-A' in spacecraftlist:
+        t_solo, pos_solo, traj_solo = getpos('STEREO-A', t.strftime('%Y-%m-%d-%H'), start, end)
+        plot_satellite(ax,pos_solo,color=sta_color,alpha=0.9, label = 'STEREO-A')
+        
+        
+    
+    if 'Earth' in planetlist:
+        earthpos = np.asarray([1,0, 0])
+        plot_planet(ax,earthpos,color=earth_color,alpha=0.9, label = 'Earth')
+        plot_circle(ax,earthpos[0])
+        
+    if 'Venus' in planetlist:
+        t_ven, pos_ven, traj_ven  = getpos('Venus Barycenter', t.strftime('%Y-%m-%d-%H'), start, end)
+        plot_planet(ax,pos_ven,color=venus_color,alpha=0.9, label = 'Venus')
+        plot_circle(ax,pos_ven[0])
+        
+    if 'Mercury' in planetlist:
+        t_mer, pos_mer, traj_mer  = getpos('Mercury Barycenter', t.strftime('%Y-%m-%d-%H'), start, end)
+        plot_planet(ax,pos_mer,color=mercury_color,alpha=0.9, label = 'Mercury')
+        plot_circle(ax,pos_mer[0])
+        
+        
+    
+    if legend == True:
+        ax.legend()
+    if title == True:
+        plt.title('3DCORE fitting result - ' + t.strftime('%Y-%m-%d-%H'))
+
+        
 
 def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, custom_data=False, save_fig = True, best = True, ensemble = True, mean = False, legend=True, fixed = None):
     
@@ -366,7 +503,7 @@ def plot_3dcore(ax, obj, t_snap, **kwargs):
     kwargs["color"] = kwargs.pop("color", "k")
     kwargs["lw"] = kwargs.pop("lw", 1)
 
-    ax.scatter(0, 0, 0, color="y", s=500)
+    ax.scatter(0, 0, 0, color="y", s=250)
 
     obj.propagator(t_snap)
     wf_model = obj.visualize_shape(0,)#visualize_wireframe(index=0)
@@ -377,7 +514,7 @@ def plot_3dcore_field(ax, obj, step_size=0.005, q0=[0.8, .1, np.pi/2],**kwargs):
 
     #initial point is q0
     q0i =np.array(q0, dtype=np.float32)
-    fl = visualize_fieldline(obj, q0, index=0, steps=1000, step_size=step_size)
+    fl = visualize_fieldline(obj, q0, index=0, steps=3000, step_size=step_size)
     #fl = model_obj.visualize_fieldline_dpsi(q0i, dpsi=2*np.pi-0.01, step_size=step_size)
     ax.plot(*fl.T, **kwargs)
     
@@ -435,7 +572,7 @@ def plot_planet(ax,satpos1,**kwargs):
     yc=satpos1[0]*np.sin(np.radians(satpos1[1]))
     zc=0
     #print(xc,yc,zc)
-    ax.scatter3D(xc,yc,zc,**kwargs)
+    ax.scatter3D(xc,yc,zc,s=50,**kwargs)
     
     
 def visualize_wireframe(obj, index=0, r=1.0, d=10):
@@ -511,7 +648,6 @@ def visualize_fieldline(obj, q0, index=0, steps=1000, step_size=0.01):
 
                 fl.append(np.array(sol.astype(obj.dtype)))
             except Exception as e:
-                print("ERROR")
                 break
 
         fl = np.array(fl, dtype=obj.dtype)
