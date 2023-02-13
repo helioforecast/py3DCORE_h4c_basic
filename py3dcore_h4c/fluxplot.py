@@ -7,6 +7,11 @@ import seaborn as sns
 sns.set_style('whitegrid')
 sns.set_context('paper')
 
+
+from matplotlib.widgets import Slider, Button
+
+
+
 import datetime as datetime
 from datetime import timedelta
 import py3dcore_h4c
@@ -167,7 +172,7 @@ def scatterparams(path):
                      plot_kws=dict(marker="+", linewidth=1)
                     )
     g.map_lower(sns.kdeplot, levels=[0.05, 0.32], color=".2") #  levels are 2-sigma and 1-sigma contours
-    g.savefig(path+'scatter_plot_matrix.png')
+    g.savefig(path+'scatter_plot_matrix.pdf')
     plt.show()
     
 
@@ -234,12 +239,12 @@ def getpos(sc, date, start, end):
     ind = t.index(date)    
     logger.info("Indices of date: %i", ind)
     
-    logger.info("%s - r: %f, lon: %f, lat: %f, ", sc, r[ind], np.rad2deg(lon[ind]),np.rad2deg(lat[ind]))
+    logger.info("%s - r: %f, lon: %f, lat: %f, ", sc, r[ind], heeq.lon.value[ind],heeq.lat.value[ind])
     
-    pos= np.asarray([r[ind],np.rad2deg(lon[ind]), np.rad2deg(lat[ind])])
+    pos= np.asarray([r[ind],heeq.lon.value[ind], heeq.lat.value[ind]])
     
-    traj = np.asarray([r,np.rad2deg(lon), np.rad2deg(lat)])
-
+    traj = np.asarray([r,heeq.lon.value, heeq.lat.value])
+    
     return t, pos, traj
 
 def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, start = '2022-09-01', end = '2022-09-15', traj = False, filepath=None, custom_data=False, save_fig = True, legend = True, title = True):
@@ -276,7 +281,7 @@ def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, start 
     sns.set_style("ticks",{'grid.linestyle': '--'})
     fsize=15
 
-    fig=plt.figure(1,figsize=(12,9),dpi=70)
+    fig=plt.figure(figsize=(15,12),dpi=200)
     ax = fig.add_subplot(111, projection='3d')
     
     plot_configure(ax, view_azim=0, view_elev=90, view_radius=0.8)
@@ -293,14 +298,14 @@ def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, start 
         plot_satellite(ax,pos_solo,color=solo_color,alpha=0.9, label = 'Solar Orbiter')
         plot_circle(ax,pos_solo[0])  
         if traj == True:
-             ax.plot(traj_solo[0]*np.sin(traj_solo[1]),traj_solo[0]*np.cos(traj_solo[1]),0, color=solo_color,alpha=0.9)
+             ax.plot(traj_solo[0]*np.cos(np.radians(traj_solo[1])),traj_solo[0]*np.sin(np.radians(traj_solo[1])),0, color=solo_color,alpha=0.9)
 
         
     if 'psp' in spacecraftlist:
         t_psp, pos_psp, traj_psp  = getpos('Parker Solar Probe', t.strftime('%Y-%m-%d-%H'), start, end)
         plot_satellite(ax,pos_psp,color=psp_color,alpha=0.9, label ='Parker Solar Probe')
         if traj == True:
-             ax.plot(traj_psp[0]*np.sin(np.radians(traj_psp[1])),traj_psp[0]*np.cos(np.radians(traj_psp[1])),0, color=psp_color,alpha=0.9)
+             ax.plot(traj_psp[0]*np.cos(np.radians(traj_psp[1])),traj_psp[0]*np.sin(np.radians(traj_psp[1])),0, color=psp_color,alpha=0.9)
                 
                 
     if 'STEREO-A' in spacecraftlist:
@@ -327,9 +332,13 @@ def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, start 
         
     
     if legend == True:
-        ax.legend()
+        ax.legend(loc='lower left')
     if title == True:
         plt.title('3DCORE fitting result - ' + t.strftime('%Y-%m-%d-%H'))
+    if save_fig == True:
+        plt.savefig('%s_3d.pdf' %filepath, dpi=300)  
+    
+    return fig
 
         
 
@@ -444,8 +453,64 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
     for _ in t_fit:
         plt.axvline(x=_, lw=lw_fitp, alpha=0.25, color="k", ls="--")
     if save_fig == True:
-        plt.savefig('%s.png' %filepath, dpi=300)    
+        plt.savefig('%s_fullinsitu.pdf' %filepath, dpi=300)    
     plt.show()
+    
+    
+def update_model(model, t_i=None, lon=None, lat=None, inc=None, dia=None, delta=None, r0=None, v0=None, T=None, n_a=None, n_b=None, b=None, bg_d=None, bg_v=None):
+    
+    if t_i is not None:
+        model.iparams_arr[0][0] = t_i
+        
+    if lon is not None:
+        model.iparams_arr[0][1] = lon
+    
+    if lat is not None:
+        model.iparams_arr[0][2] = lat
+        
+    if inc is not None:
+        model.iparams_arr[0][3] = inc
+        
+    if dia is not None:
+        model.iparams_arr[0][4] = dia
+        
+    if delta is not None:
+        model.iparams_arr[0][5] = delta
+        
+    if r0 is not None:
+        model.iparams_arr[0][6] = r0
+        
+    if v0 is not None:
+        model.iparams_arr[0][7] = v0
+        
+    if T is not None:
+        model.iparams_arr[0][8] = T
+        
+    if n_a is not None:
+        model.iparams_arr[0][9] = n_a
+        
+    if n_b is not None:
+        model.iparams_arr[0][10] = n_b
+        
+    if b is not None:
+        model.iparams_arr[0][11] = b
+        
+    if bg_d is not None:
+        model.iparams_arr[0][12] = bg_d
+        
+    if bg_v is not None:
+        model.iparams_arr[0][13] = lobg_vn
+        
+    model.sparams_arr = np.empty((model.ensemble_size, model.sparams), dtype=model.dtype)
+    model.qs_sx = np.empty((model.ensemble_size, 4), dtype=model.dtype)
+    model.qs_xs = np.empty((model.ensemble_size, 4), dtype=model.dtype)
+    
+    model.iparams_meta = np.empty((len(model.iparams), 7), dtype=model.dtype)
+    
+    #iparams_meta is updated
+    generate_quaternions(model.iparams_arr, model.qs_sx, model.qs_xs)
+        
+    return model
 
     
 def returnfixedmodel(filepath, fixed_iparams_arr=None):
@@ -460,14 +525,16 @@ def returnfixedmodel(filepath, fixed_iparams_arr=None):
         res, allres, ind, meanparams = get_params(filepath)
         model_obj.iparams_arr = np.expand_dims(meanparams, axis=0)
     
-    elif (fixed_iparams_arr == None).any():
-        logger.info("No iparams_arr given, using parameters for run with minimum eps.")
-        res, allres, ind, meanparams = get_params(filepath)
-        model_obj.iparams_arr = np.expand_dims(res, axis=0)
-    
     else:
-        logger.info("Plotting run with fixed parameters.")
-        model_obj.iparams_arr = np.expand_dims(fixed_iparams_arr, axis=0)
+        try: 
+            fixed_parameters_arr
+            logger.info("Plotting run with fixed parameters.")
+            model_obj.iparams_arr = np.expand_dims(fixed_iparams_arr, axis=0)
+    
+        except:
+            logger.info("No iparams_arr given, using parameters for run with minimum eps.")
+            res, allres, ind, meanparams = get_params(filepath)
+            model_obj.iparams_arr = np.expand_dims(res, axis=0)
     
     model_obj.sparams_arr = np.empty((model_obj.ensemble_size, model_obj.sparams), dtype=model_obj.dtype)
     model_obj.qs_sx = np.empty((model_obj.ensemble_size, 4), dtype=model_obj.dtype)
@@ -503,7 +570,15 @@ def plot_3dcore(ax, obj, t_snap, **kwargs):
     kwargs["color"] = kwargs.pop("color", "k")
     kwargs["lw"] = kwargs.pop("lw", 1)
 
-    ax.scatter(0, 0, 0, color="y", s=250)
+    ax.scatter(0, 0, 0, color="y", s=50) # 5 solar radii
+    #Sun
+    scale=5*695510/149597870.700 #Rs in km, AU in km
+    # sphere with radius Rs in AU
+    u, v = np.mgrid[0:2*np.pi:40j, 0:np.pi:30j]
+    x = np.cos(u)*np.sin(v)*scale
+    y = np.sin(u)*np.sin(v)*scale
+    z = np.cos(v)*scale
+    #ax.plot_surface(x, y, z, rstride=1, cstride=1, color='yellow', linewidth=0, antialiased=False)
 
     obj.propagator(t_snap)
     wf_model = obj.visualize_shape(0,)#visualize_wireframe(index=0)
@@ -514,7 +589,7 @@ def plot_3dcore_field(ax, obj, step_size=0.005, q0=[0.8, .1, np.pi/2],**kwargs):
 
     #initial point is q0
     q0i =np.array(q0, dtype=np.float32)
-    fl = visualize_fieldline(obj, q0, index=0, steps=3000, step_size=step_size)
+    fl = visualize_fieldline(obj, q0, index=0, steps=7000, step_size=step_size)
     #fl = model_obj.visualize_fieldline_dpsi(q0i, dpsi=2*np.pi-0.01, step_size=step_size)
     ax.plot(*fl.T, **kwargs)
     
@@ -572,7 +647,7 @@ def plot_planet(ax,satpos1,**kwargs):
     yc=satpos1[0]*np.sin(np.radians(satpos1[1]))
     zc=0
     #print(xc,yc,zc)
-    ax.scatter3D(xc,yc,zc,s=50,**kwargs)
+    ax.scatter3D(xc,yc,zc,s=10,**kwargs)
     
     
 def visualize_wireframe(obj, index=0, r=1.0, d=10):
