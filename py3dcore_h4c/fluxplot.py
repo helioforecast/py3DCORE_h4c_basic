@@ -10,6 +10,7 @@ sns.set_context('paper')
 
 from matplotlib.widgets import Slider, Button
 
+from matplotlib.colors import LightSource
 
 
 import datetime as datetime
@@ -18,7 +19,7 @@ import py3dcore_h4c
 from py3dcore_h4c.fitter.base import custom_observer, BaseFitter, get_ensemble_mean
 
 from sunpy.coordinates import frames, get_horizons_coord
-
+import heliosat
     
 from scipy.optimize import least_squares
 
@@ -156,6 +157,8 @@ def get_ensemble_stats(filepath):
 
 def scatterparams(path):
     
+    ''' returns scatterplots from a results file'''
+    
     res, iparams_arrt, ind, meanparams = get_params(path)
     
     df = pds.DataFrame(iparams_arrt)
@@ -205,6 +208,8 @@ def loadpickle(path = None, number = -1):
 
 def returnmodel(filepath):
     
+    ''' returns a model using the statistics from a previous result'''
+    
     t_launch = BaseFitter(filepath).dt_0
     
     out = get_ensemble_stats(filepath)
@@ -216,8 +221,76 @@ def returnmodel(filepath):
     
     return model_obj
 
+def plot_traj(ax, sat, t_snap, frame="HEEQ", traj_pos=True, traj_minor=None, custom_data = False, **kwargs):
+    kwargs["alpha"] = kwargs.pop("alpha", 1)
+    kwargs["color"] = kwargs.pop("color", "k")
+    kwargs["lw"] = kwargs.pop("lw", 1)
+    kwargs["s"] = kwargs.pop("s", 25)
+    traj_major = kwargs.pop("traj_major", 50)
+    
+    if custom_data == False:
+        if sat == "Solar Orbiter":
+            observer = "SOLO"
+        inst = getattr(heliosat, observer)() # get observer obj
+        logger.info("Using HelioSat to retrieve observer data")
+        
+    elif custom_data=='sunpy':
+        
+        _s = kwargs.pop("s")
+        
+        if "ls" in kwargs:
+            kwargs.pop("ls")
+            
+        _ls = "--"
+        _lw = kwargs.pop("lw") / 2
+
+        if traj_major and traj_major > 0:
+            start = t_snap - datetime.timedelta(hours=traj_major)
+            end = t_snap + datetime.timedelta(hours=traj_major)
+            t, pos, traj = getpos(sat, t_snap.strftime('%Y-%m-%d-%H'), start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
+            ax.plot(traj[0]*np.cos(np.radians(traj[1])),traj[0]*np.sin(np.radians(traj[1])),0, color=kwargs["color"], alpha=0.9, ls=_ls, lw=_lw)
+
+        if traj_minor and traj_minor > 0:
+            start = t_snap - datetime.timedelta(hours=traj_minor)
+            end = t_snap + datetime.timedelta(hours=traj_minor)
+            t, pos, traj = getpos(sat, t_snap.strftime('%Y-%m-%d-%H'), start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
+            ax.plot(traj[0]*np.cos(np.radians(traj[1])),traj[0]*np.sin(np.radians(traj[1])),0, color=kwargs["color"], alpha=0.9, ls=_ls, lw=_lw)
+
+        
+        if traj_pos:
+            plot_satellite(ax,pos, label = sat,s=_s, lw=_lw, **kwargs)
+        
+        return
+        
+    else:
+        inst = custom_observer(custom_data)
+    
+    
+    _s = kwargs.pop("s")
+
+    if traj_pos:
+        pos = inst.trajectory(t_snap, frame)
+
+        ax.scatter(*pos.T, s=_s, **kwargs)
+        
+    if traj_major and traj_major > 0:
+        traj = inst.trajectory([t_snap + datetime.timedelta(hours=i) for i in range(-traj_major, traj_major)], frame)
+        #ax.plot(*traj.T, **kwargs)
+        
+    if traj_minor and traj_minor > 0:
+        traj = inst.trajectory([t_snap + datetime.timedelta(hours=i) for i in range(-traj_minor, traj_minor)], frame)
+        
+    if "ls" in kwargs:
+        kwargs.pop("ls")
+
+    _ls = "--"
+    _lw = kwargs.pop("lw") / 2
+
+    ax.plot(*traj.T, ls=_ls, lw=_lw, **kwargs)
+
 def getpos(sc, date, start, end):
     
+    '''returns the positions for a spacecraft using sunpy'''
     
     coord = get_horizons_coord(sc, time={'start': start, 'stop': end, 'step': '60m'})  
     heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
@@ -247,7 +320,61 @@ def getpos(sc, date, start, end):
     
     return t, pos, traj
 
-def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, start = '2022-09-01', end = '2022-09-15', traj = False, filepath=None, custom_data=False, save_fig = True, legend = True, title = True):
+def plot_shift(axis,extent,cx,cy,cz):
+    #shift center of plot
+    axis.set_xbound(cx-extent, cx+extent)
+    axis.set_ybound(cy-extent, cy+extent)
+    axis.set_zbound(cz-extent*0.75, cz+extent*0.75)
+    
+#define sun here so it does not need to be recalculated every time
+scale=695510/149597870.700 #Rs in km, AU in km
+# sphere with radius Rs in AU
+u, v = np.mgrid[0:2*np.pi:40j, 0:np.pi:30j]
+x = np.cos(u)*np.sin(v)*scale
+y = np.sin(u)*np.sin(v)*scale
+z = np.cos(v)*scale
+
+def full3d_multiview(t_launch, filepath):
+    
+    """
+    Plots 3d from multiple views.
+    """
+    
+    TP_A =  t_launch + datetime.timedelta(hours=4)
+    TP_B =  t_launch + datetime.timedelta(hours=26)
+
+    C_A = "xkcd:red"
+    C_B = "xkcd:blue"
+
+    C0 = "xkcd:black"
+    C1 = "xkcd:magenta"
+    C2 = "xkcd:orange"
+    C3 = "xkcd:azure"
+
+    sns.set_style('whitegrid')
+
+    fig = plt.figure(figsize=(15, 11),dpi=100)
+
+    #define subplot grid
+    ax1 = plt.subplot2grid((2, 3), (0, 0),rowspan=2,colspan=2,projection='3d')  
+    ax2 = plt.subplot2grid((2, 3), (0, 2),projection='3d')  
+    ax3 = plt.subplot2grid((2, 3), (1, 2),projection='3d')  
+    
+    model_obj = returnmodel(filepath)
+    
+    ######### tilted view
+    plot_configure(ax1, view_azim=125, view_elev=40, view_radius=.08,light_source=True)
+
+    plot_3dcore(ax1, model_obj, TP_A, color=C_A)
+    plot_3dcore_field(ax1, model_obj, color=C_A, step_size=0.0005, lw=1.0, ls="-",light_source = True)
+    plot_traj(ax1, "Parker Solar Probe", t_snap = TP_A, frame="HEEQ", custom_data = 'sunpy', color='k')
+    
+#     plot_3dcore(ax1, model_obj, TP_B, color=C_B)
+#     plot_3dcore_field(ax1, model_obj, color=C_B, steps=900, step_size=0.001, lw=1.0, ls="-")
+#     plot_traj(ax1, "PSP", TP_B, frame="ECLIPJ2000", color=C_B,lw=1.5)
+    
+
+def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, traj = False, filepath=None, custom_data=False, save_fig = True, legend = True, title = True,**kwargs):
     
     """
     Plots 3d.
@@ -294,20 +421,14 @@ def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, start 
 
     
     if 'solo' in spacecraftlist:
-        t_solo, pos_solo, traj_solo = getpos('Solar Orbiter', t.strftime('%Y-%m-%d-%H'), start, end)
-        plot_satellite(ax,pos_solo,color=solo_color,alpha=0.9, label = 'Solar Orbiter')
-        plot_circle(ax,pos_solo[0])  
-        if traj == True:
-             ax.plot(traj_solo[0]*np.cos(np.radians(traj_solo[1])),traj_solo[0]*np.sin(np.radians(traj_solo[1])),0, color=solo_color,alpha=0.9)
+
+        plot_traj(ax, sat = 'Solar Orbiter', t_snap = t, frame="HEEQ", traj_pos=True, traj_minor=None, custom_data = 'sunpy', color=solo_color,**kwargs)
 
         
     if 'psp' in spacecraftlist:
-        t_psp, pos_psp, traj_psp  = getpos('Parker Solar Probe', t.strftime('%Y-%m-%d-%H'), start, end)
-        plot_satellite(ax,pos_psp,color=psp_color,alpha=0.9, label ='Parker Solar Probe')
-        if traj == True:
-             ax.plot(traj_psp[0]*np.cos(np.radians(traj_psp[1])),traj_psp[0]*np.sin(np.radians(traj_psp[1])),0, color=psp_color,alpha=0.9)
-                
-                
+        
+        plot_traj(ax, sat = 'Parker Solar Probe', t_snap = t, frame="HEEQ", traj_pos=True, traj_minor=None, custom_data = 'sunpy', color=psp_color,**kwargs)
+        
     if 'STEREO-A' in spacecraftlist:
         t_solo, pos_solo, traj_solo = getpos('STEREO-A', t.strftime('%Y-%m-%d-%H'), start, end)
         plot_satellite(ax,pos_solo,color=sta_color,alpha=0.9, label = 'STEREO-A')
@@ -459,6 +580,8 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
     
 def update_model(model, t_i=None, lon=None, lat=None, inc=None, dia=None, delta=None, r0=None, v0=None, T=None, n_a=None, n_b=None, b=None, bg_d=None, bg_v=None):
     
+    """updates a specific parameter in a model"""
+    
     if t_i is not None:
         model.iparams_arr[0][0] = t_i
         
@@ -515,6 +638,8 @@ def update_model(model, t_i=None, lon=None, lat=None, inc=None, dia=None, delta=
     
 def returnfixedmodel(filepath, fixed_iparams_arr=None):
     
+    '''returns a fixed model not generating random iparams'''
+    
     ftobj = BaseFitter(filepath) # load Fitter from path
     model_obj = ftobj.model_obj
     
@@ -552,7 +677,7 @@ def returnfixedmodel(filepath, fixed_iparams_arr=None):
     
     
     
-def plot_configure(ax, **kwargs):
+def plot_configure(ax, light_source = False, **kwargs):
     view_azim = kwargs.pop("view_azim", -25)
     view_elev = kwargs.pop("view_elev", 25)
     view_radius = kwargs.pop("view_radius", .5)
@@ -563,21 +688,21 @@ def plot_configure(ax, **kwargs):
     ax.set_ylim([-view_radius, view_radius])
     ax.set_zlim([-view_radius, view_radius])
     
+    if light_source == True:
+        #draw sun        
+        ls = LightSource(azdeg=320, altdeg=40)  
+        ax.plot_surface(x, y, z, rstride=1, cstride=1, color='yellow',lightsource=ls, linewidth=0, antialiased=False,zorder=5)
+    
     ax.set_axis_off()
 
-def plot_3dcore(ax, obj, t_snap, **kwargs):
+def plot_3dcore(ax, obj, t_snap, light_source=False, **kwargs):
     kwargs["alpha"] = kwargs.pop("alpha", .05)
     kwargs["color"] = kwargs.pop("color", "k")
     kwargs["lw"] = kwargs.pop("lw", 1)
 
-    ax.scatter(0, 0, 0, color="y", s=50) # 5 solar radii
-    #Sun
-    scale=5*695510/149597870.700 #Rs in km, AU in km
-    # sphere with radius Rs in AU
-    u, v = np.mgrid[0:2*np.pi:40j, 0:np.pi:30j]
-    x = np.cos(u)*np.sin(v)*scale
-    y = np.sin(u)*np.sin(v)*scale
-    z = np.cos(v)*scale
+    if light_source == False:
+        ax.scatter(0, 0, 0, color="y", s=50) # 5 solar radii
+        
     #ax.plot_surface(x, y, z, rstride=1, cstride=1, color='yellow', linewidth=0, antialiased=False)
 
     obj.propagator(t_snap)
@@ -593,38 +718,6 @@ def plot_3dcore_field(ax, obj, step_size=0.005, q0=[0.8, .1, np.pi/2],**kwargs):
     #fl = model_obj.visualize_fieldline_dpsi(q0i, dpsi=2*np.pi-0.01, step_size=step_size)
     ax.plot(*fl.T, **kwargs)
     
-    
-def plot_traj(ax, sat, t_snap, frame="HEEQ", traj_pos=True, traj_major=4, traj_minor=None, **kwargs):
-    kwargs["alpha"] = kwargs.pop("alpha", 1)
-    kwargs["color"] = kwargs.pop("color", "k")
-    kwargs["lw"] = kwargs.pop("lw", 1)
-    kwargs["s"] = kwargs.pop("s", 25)
-    
-    inst = getattr(heliosat, sat)()
-
-    _s = kwargs.pop("s")
-
-    if traj_pos:
-        pos = inst.trajectory(t_snap, frame)
-
-        ax.scatter(*pos.T, s=_s, **kwargs)
-        
-    if traj_major and traj_major > 0:
-        traj = inst.trajectory([t_snap + datetime.timedelta(hours=i) for i in range(-traj_major, traj_major)], frame)
-        ax.plot(*traj.T, **kwargs)
-        
-    if traj_minor and traj_minor > 0:
-        traj = inst.trajectory([t_snap + datetime.timedelta(hours=i) for i in range(-traj_minor, traj_minor)], frame)
-        
-        if "ls" in kwargs:
-            kwargs.pop("ls")
-
-        _ls = "--"
-        _lw = kwargs.pop("lw") / 2
-        
-        ax.plot(*traj.T, ls=_ls, lw=_lw, **kwargs)
-
-        
 def plot_circle(ax,dist,**kwargs):        
 
     thetac = np.linspace(0, 2 * np.pi, 100)
