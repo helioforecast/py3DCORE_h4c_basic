@@ -595,7 +595,7 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
         observer_obj = custom_observer(custom_data)
         
     t, b = observer_obj.get([start, end], "mag", reference_frame="HEEQ", as_endpoints=True)
-    
+    print(t)
     pos = observer_obj.trajectory(t, reference_frame="HEEQ")
     if best == True:
         model_obj = returnfixedmodel(filepath)
@@ -700,12 +700,14 @@ def insituprofiles(observer, date=None, start=None, end=None, filepath=None, sav
     if end == None:
         logger.info("Please specify end time of plot")
         
-    t = [start + datetime.timedelta(hours=i) for i in range(96)]
+    t = np.asarray([start + datetime.timedelta(hours=i) for i in range(96)])
     end = start + datetime.timedelta(hours=96)
-    _,pos_temp,traj = getpos(observer, date, start, end)
-    
+    _,pos_temp,traj = getpos(observer, date, start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
     pos = [[traj[0][i],traj[1][i],traj[2][i]] for i in range(len(traj[0]))]
+    print(t)
     
+    
+
     if best == True:
         model_obj = returnfixedmodel(filepath)
         
@@ -723,6 +725,8 @@ def insituprofiles(observer, date=None, start=None, end=None, filepath=None, sav
         
         means = np.squeeze(np.array(model_obj.simulator(t, pos))[0])
         means[means==0] = np.nan
+        print(means)
+        
     
     lw_best = 3  # linewidth for plotting the min(eps) run
     lw_mean = 3  # linewidth for plotting the mean run
