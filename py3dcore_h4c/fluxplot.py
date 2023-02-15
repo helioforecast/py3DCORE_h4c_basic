@@ -595,7 +595,6 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
         observer_obj = custom_observer(custom_data)
         
     t, b = observer_obj.get([start, end], "mag", reference_frame="HEEQ", as_endpoints=True)
-    print(t)
     pos = observer_obj.trajectory(t, reference_frame="HEEQ")
     if best == True:
         model_obj = returnfixedmodel(filepath)
@@ -614,7 +613,7 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
         
         means = np.squeeze(np.array(model_obj.simulator(t, pos))[0])
         means[means==0] = np.nan
-    
+            
     # get ensemble_data
     if ensemble == True:
         ed = py3dcore_h4c.generate_ensemble(filepath, t, reference_frame="HEEQ",reference_frame_to="HEEQ", max_index=128, custom_data=custom_data)
@@ -702,9 +701,8 @@ def insituprofiles(observer, date=None, start=None, end=None, filepath=None, sav
         
     t = np.asarray([start + datetime.timedelta(hours=i) for i in range(96)])
     end = start + datetime.timedelta(hours=96)
-    _,pos_temp,traj = getpos(observer, date, start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
+    ttt,pos_temp,traj = getpos(observer, date, start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
     pos = [[traj[0][i],traj[1][i],traj[2][i]] for i in range(len(traj[0]))]
-    print(t)
     
     
 
@@ -723,10 +721,11 @@ def insituprofiles(observer, date=None, start=None, end=None, filepath=None, sav
     if mean == True:
         model_obj = returnfixedmodel(filepath, fixed_iparams_arr='mean')
         
-        means = np.squeeze(np.array(model_obj.simulator(t, pos))[0])
+        means = np.squeeze(np.array(model_obj.simulator(t, pos))[0])     
         means[means==0] = np.nan
-        print(means)
-        
+        if np.isnan(means).all() == True:
+            logger.info("WARNING: Apparently not a hit --- > skipping plot")
+            return
     
     lw_best = 3  # linewidth for plotting the min(eps) run
     lw_mean = 3  # linewidth for plotting the mean run
