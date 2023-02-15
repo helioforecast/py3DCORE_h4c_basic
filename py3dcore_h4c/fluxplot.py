@@ -175,7 +175,7 @@ def scatterparams(path):
                      plot_kws=dict(marker="+", linewidth=1)
                     )
     g.map_lower(sns.kdeplot, levels=[0.05, 0.32], color=".2") #  levels are 2-sigma and 1-sigma contours
-    g.savefig(path+'scatter_plot_matrix.pdf')
+    g.savefig(path[:-7] + 'scatter_plot_matrix.pdf')
     plt.show()
     
 
@@ -223,10 +223,10 @@ def returnmodel(filepath):
 
 def plot_traj(ax, sat, t_snap, frame="HEEQ", traj_pos=True, traj_minor=None, custom_data = False, **kwargs):
     kwargs["alpha"] = kwargs.pop("alpha", 1)
-    kwargs["color"] = kwargs.pop("color", "k")
+    color = kwargs.pop("color", "k")
     kwargs["lw"] = kwargs.pop("lw", 1)
     kwargs["s"] = kwargs.pop("s", 25)
-    traj_major = kwargs.pop("traj_major", 50)
+    traj_major = kwargs.pop("traj_major", 80)
     
     if custom_data == False:
         if sat == "Solar Orbiter":
@@ -246,19 +246,22 @@ def plot_traj(ax, sat, t_snap, frame="HEEQ", traj_pos=True, traj_minor=None, cus
 
         if traj_major and traj_major > 0:
             start = t_snap - datetime.timedelta(hours=traj_major)
-            end = t_snap + datetime.timedelta(hours=traj_major)
+            end = t_snap + datetime.timedelta(hours=traj_major+15)
             t, pos, traj = getpos(sat, t_snap.strftime('%Y-%m-%d-%H'), start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
-            ax.plot(traj[0]*np.cos(np.radians(traj[1])),traj[0]*np.sin(np.radians(traj[1])),0, color=kwargs["color"], alpha=0.9, ls=_ls, lw=_lw)
+            ax.plot(traj[0]*np.cos(np.radians(traj[1])),traj[0]*np.sin(np.radians(traj[1])),0, color='k', alpha=0.9, ls=_ls, lw=_lw)
 
         if traj_minor and traj_minor > 0:
             start = t_snap - datetime.timedelta(hours=traj_minor)
             end = t_snap + datetime.timedelta(hours=traj_minor)
             t, pos, traj = getpos(sat, t_snap.strftime('%Y-%m-%d-%H'), start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
-            ax.plot(traj[0]*np.cos(np.radians(traj[1])),traj[0]*np.sin(np.radians(traj[1])),0, color=kwargs["color"], alpha=0.9, ls=_ls, lw=_lw)
+            ax.plot(traj[0]*np.cos(np.radians(traj[1])),traj[0]*np.sin(np.radians(traj[1])),0, color='k', alpha=0.9, ls=_ls, lw=_lw)
 
         
         if traj_pos:
-            plot_satellite(ax,pos, label = sat,s=_s, lw=_lw, **kwargs)
+            start = t_snap - datetime.timedelta(hours=30)
+            end = t_snap + datetime.timedelta(hours=30)
+            _, pos, _ = getpos(sat, t_snap.strftime('%Y-%m-%d-%H'), start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
+            plot_satellite(ax,pos, label = sat,s=_s, lw=_lw, color = color)
         
         return
         
@@ -340,8 +343,8 @@ def full3d_multiview(t_launch, filepath):
     Plots 3d from multiple views.
     """
     
-    TP_A =  t_launch + datetime.timedelta(hours=4)
-    TP_B =  t_launch + datetime.timedelta(hours=26)
+    TP_A =  t_launch + datetime.timedelta(hours=2)
+    TP_B =  t_launch + datetime.timedelta(hours=46)
 
     C_A = "xkcd:red"
     C_B = "xkcd:blue"
@@ -363,18 +366,50 @@ def full3d_multiview(t_launch, filepath):
     model_obj = returnmodel(filepath)
     
     ######### tilted view
-    plot_configure(ax1, view_azim=125, view_elev=40, view_radius=.08,light_source=True)
+    plot_configure(ax1, view_azim=150, view_elev=25, view_radius=.2,light_source=True) #view_radius=.08
 
-    plot_3dcore(ax1, model_obj, TP_A, color=C_A)
-    plot_3dcore_field(ax1, model_obj, color=C_A, step_size=0.0005, lw=1.0, ls="-",light_source = True)
-    plot_traj(ax1, "Parker Solar Probe", t_snap = TP_A, frame="HEEQ", custom_data = 'sunpy', color='k')
+    plot_3dcore(ax1, model_obj, TP_A, color=C_A,light_source = True)
+    plot_3dcore_field(ax1, model_obj, color=C_A, step_size=0.0005, lw=1.0, ls="-")
+    plot_traj(ax1, "Parker Solar Probe", t_snap = TP_A, frame="HEEQ", custom_data = 'sunpy', color=C_A)
     
-#     plot_3dcore(ax1, model_obj, TP_B, color=C_B)
-#     plot_3dcore_field(ax1, model_obj, color=C_B, steps=900, step_size=0.001, lw=1.0, ls="-")
-#     plot_traj(ax1, "PSP", TP_B, frame="ECLIPJ2000", color=C_B,lw=1.5)
+    plot_3dcore(ax1, model_obj, TP_B, color=C_B, light_source = True)
+    plot_3dcore_field(ax1, model_obj, color=C_B, step_size=0.001, lw=1.0, ls="-")
+    plot_traj(ax1, "Solar Orbiter", t_snap = TP_B, frame="HEEQ", custom_data = 'sunpy', color=C_B)
     
+    #dotted trajectory
+    #plot_traj(ax1, "PSP", TP_B, frame="ECLIPJ2000", color="k", traj_pos=False, traj_major=None, traj_minor=144,lw=1.5)
 
-def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, traj = False, filepath=None, custom_data=False, save_fig = True, legend = True, title = True,**kwargs):
+    #shift center
+    plot_shift(ax1,0.31,-0.25,0.0,-0.2)
+    
+    
+    ########### top view panel
+    plot_configure(ax2, view_azim=165-90, view_elev=90, view_radius=.08,light_source=True)
+    
+    plot_3dcore(ax2, model_obj, TP_A, color=C_A,light_source = True)
+    plot_3dcore_field(ax2, model_obj, color=C_A, step_size=0.0005, lw=1.0, ls="-")
+    plot_traj(ax2, "Parker Solar Probe", t_snap = TP_A, frame="HEEQ", custom_data = 'sunpy', color=C_A)
+    
+    plot_3dcore(ax2, model_obj, TP_B, color=C_B, light_source = True)
+    plot_3dcore_field(ax2, model_obj, color=C_B, step_size=0.001, lw=1.0, ls="-")
+    plot_traj(ax2, "Solar Orbiter", t_snap = TP_B, frame="HEEQ", custom_data = 'sunpy', color=C_B)
+    plot_shift(ax2,0.26,-0.41,0.08,0.0) 
+    
+    
+    ############## edge on view panel
+    plot_configure(ax3, view_azim=65, view_elev=-5, view_radius=.01,light_source=True)
+    plot_traj(ax3, "Parker Solar Probe", t_snap=TP_A, frame="HEEQ", custom_data = 'sunpy', color=C_A)
+
+    plot_3dcore(ax3, model_obj, TP_B, color=C_B, light_source = True)
+    plot_3dcore_field(ax3, model_obj, color=C_B, step_size=0.001, lw=1.0, ls="-")
+    plot_traj(ax3, "Solar Orbiter", t_snap = TP_B, frame="HEEQ", custom_data = 'sunpy', color=C_B)
+
+    plot_shift(ax3,0.26,-0.41,0.08,0.0)
+
+
+    plt.savefig(filepath[:-7] + 'multiview.pdf',bbox_inches='tight')
+    
+def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, traj = 50, filepath=None, custom_data=False, save_fig = True, legend = True, title = True,**kwargs):
     
     """
     Plots 3d.
@@ -422,17 +457,11 @@ def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, traj =
     
     if 'solo' in spacecraftlist:
 
-        plot_traj(ax, sat = 'Solar Orbiter', t_snap = t, frame="HEEQ", traj_pos=True, traj_minor=None, custom_data = 'sunpy', color=solo_color,**kwargs)
-
+        plot_traj(ax, sat = 'Solar Orbiter', t_snap = t, frame="HEEQ", traj_pos=True, traj_major = traj, traj_minor=None, custom_data = 'sunpy', color=solo_color,**kwargs)
+        
         
     if 'psp' in spacecraftlist:
-        
-        plot_traj(ax, sat = 'Parker Solar Probe', t_snap = t, frame="HEEQ", traj_pos=True, traj_minor=None, custom_data = 'sunpy', color=psp_color,**kwargs)
-        
-    if 'STEREO-A' in spacecraftlist:
-        t_solo, pos_solo, traj_solo = getpos('STEREO-A', t.strftime('%Y-%m-%d-%H'), start, end)
-        plot_satellite(ax,pos_solo,color=sta_color,alpha=0.9, label = 'STEREO-A')
-        
+        plot_traj(ax, sat = 'Parker Solar Probe', t_snap = t, frame="HEEQ", traj_pos=True, traj_major = traj, traj_minor=None, custom_data = 'sunpy', color=psp_color,**kwargs)
         
     
     if 'Earth' in planetlist:
@@ -457,7 +486,7 @@ def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, traj =
     if title == True:
         plt.title('3DCORE fitting result - ' + t.strftime('%Y-%m-%d-%H'))
     if save_fig == True:
-        plt.savefig('%s_3d.pdf' %filepath, dpi=300)  
+        plt.savefig(filepath[:-7] + 'full3d.pdf', dpi=300)  
     
     return fig
 
@@ -574,7 +603,7 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
     for _ in t_fit:
         plt.axvline(x=_, lw=lw_fitp, alpha=0.25, color="k", ls="--")
     if save_fig == True:
-        plt.savefig('%s_fullinsitu.pdf' %filepath, dpi=300)    
+        plt.savefig(filepath[:-7] + 'fullinsitu.pdf', dpi=300)    
     plt.show()
     
     
@@ -714,7 +743,7 @@ def plot_3dcore_field(ax, obj, step_size=0.005, q0=[0.8, .1, np.pi/2],**kwargs):
 
     #initial point is q0
     q0i =np.array(q0, dtype=np.float32)
-    fl = visualize_fieldline(obj, q0, index=0, steps=7000, step_size=step_size)
+    fl = visualize_fieldline(obj, q0, index=0, steps=8000, step_size=0.005)
     #fl = model_obj.visualize_fieldline_dpsi(q0i, dpsi=2*np.pi-0.01, step_size=step_size)
     ax.plot(*fl.T, **kwargs)
     
