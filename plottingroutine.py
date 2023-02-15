@@ -130,3 +130,56 @@ mpool.join()
 print('done 4/4')
 
 os.system('ffmpeg -r 25 -i '+filepath[:-7]+'movie_3d/%05d.jpg -b 5000k -r 25 '+filepath[:-7]+'movie_3d/full_3d_movie.mp4 -y -loglevel quiet')
+
+
+#measurement times 
+#tm0 =  t_launch + datetime.timedelta(days=1.5)
+tm0 =  datetime.datetime(2022, 9, 7, 1)
+tm1 =  t_launch + datetime.timedelta(days=1.7)
+tm2 =  t_launch + datetime.timedelta(days=3.5)
+
+fig = fp.full3d_multiview(t_launch = t_launch, filepath=filepath)
+
+def make_frame2(k):
+    tm0 = datetime.datetime(2022, 9, 5, 19)
+    t = tm0 + k*datetime.timedelta(hours=1)
+    frametime = k
+    
+    fig = fp.full3d_multiview_movie(t_launch = tm0, t = t, filepath=filepath,
+                                    frametime=k)
+    frmstr = '%05i' % (k) 
+    plt.savefig(filepath[:-7] + 'movie_3d_multiview/'+frmstr+'.jpg',dpi=200)  
+    return fig
+
+inn=[i for i in range(100)]
+
+
+mpool = multiprocessing.Pool(processes=5)
+mpool.map(make_frame2, inn[0:20])
+mpool.close()
+mpool.join()
+
+print('done 1/4')
+
+mpool = multiprocessing.Pool(processes=5)
+mpool.map(make_frame2, inn[20:40])
+mpool.close()
+mpool.join()
+
+print('done 2/4')
+
+mpool = multiprocessing.Pool(processes=5)
+mpool.map(make_frame2, inn[40:60])
+mpool.close()
+mpool.join()
+
+print('done 3/4')
+
+mpool = multiprocessing.Pool(processes=5)
+mpool.map(make_frame2, inn[40:80])
+mpool.close()
+mpool.join()
+
+print('done 4/4')
+
+os.system('ffmpeg -r 25 -i '+filepath[:-7]+'movie_3d_multiview/%05d.jpg -b 5000k -r 25 '+filepath[:-7]+'movie_3d/full_3d_multiview_movie.mp4 -y -loglevel quiet')

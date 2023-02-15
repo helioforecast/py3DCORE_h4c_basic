@@ -597,8 +597,6 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
     t, b = observer_obj.get([start, end], "mag", reference_frame="HEEQ", as_endpoints=True)
     
     pos = observer_obj.trajectory(t, reference_frame="HEEQ")
-    print(t)
-    print(pos)
     if best == True:
         model_obj = returnfixedmodel(filepath)
         
@@ -706,9 +704,7 @@ def insituprofiles(observer, date=None, start=None, end=None, filepath=None, sav
     end = start + datetime.timedelta(hours=96)
     _,pos_temp,traj = getpos(observer, date, start, end)
     
-    pos = traj #[pos_temp for _ in t]
-    print(t)
-    print(pos_temp)
+    pos = [[traj[0][i],traj[1][i],traj[2][i]] for i in range(len(traj[0]))]
     
     if best == True:
         model_obj = returnfixedmodel(filepath)
