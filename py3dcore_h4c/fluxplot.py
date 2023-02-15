@@ -409,6 +409,75 @@ def full3d_multiview(t_launch, filepath):
 
     plt.savefig(filepath[:-7] + 'multiview.pdf',bbox_inches='tight')
     
+    
+def full3d_multiview_movie(t_launch, t, filepath, frametime):
+    
+    """
+    Plots 3d movie from multiple views.
+    """
+    
+    fig = plt.figure(52,figsize=(19.2, 10.8),dpi=100)
+    
+    #define subplot grid
+    ax1 = plt.subplot2grid((3, 3), (0, 0),rowspan=3,colspan=2,projection='3d')  
+    ax2 = plt.subplot2grid((3, 3), (0, 2),projection='3d')  
+    ax3 = plt.subplot2grid((3, 3), (1, 2),projection='3d')  
+    
+    #manually set axes positions
+        
+    ax1.set_position([0,0,0.6,1], which='both')
+    ax2.set_position([0.65,0.35,0.35,0.65], which='both')
+    ax3.set_position([0.6,0,0.4,0.4], which='both')
+    
+
+    C_A = "xkcd:red"
+    C_B = "xkcd:blue"
+
+    C0 = "xkcd:black"
+    C1 = "xkcd:magenta"
+    C2 = "xkcd:orange"
+    C3 = "xkcd:azure"
+
+    sns.set_style('whitegrid')
+    sns.set_style("ticks",{'grid.linestyle': '--'})
+    
+    model_obj = returnmodel(filepath)
+    
+    ######### tilted view
+    plot_configure(ax1, view_azim=150, view_elev=25, view_radius=.2,light_source=True) #view_radius=.08
+
+    plot_3dcore(ax1, model_obj, t, color=C_A,light_source = True,lw = 3)
+    plot_traj(ax1, "Parker Solar Probe", t_snap = t, frame="HEEQ", custom_data = 'sunpy', color='k')
+    plot_traj(ax1, "Solar Orbiter", t_snap = t, frame="HEEQ", custom_data = 'sunpy', color='k')
+
+    #shift center
+    plot_shift(ax1,0.31,-0.25,0.0,-0.2)
+    
+    
+    ########### top view panel
+    plot_configure(ax2, view_azim=165-90, view_elev=90, view_radius=.08,light_source=True)
+    
+    plot_3dcore(ax2, model_obj, t, color=C_A,light_source = True,lw = 3)
+    plot_traj(ax2, "Parker Solar Probe", t_snap = t, frame="HEEQ", custom_data = 'sunpy', color='k')
+    plot_traj(ax2, "Solar Orbiter", t_snap = t, frame="HEEQ", custom_data = 'sunpy', color='k')
+    plot_shift(ax2,0.26,-0.41,0.08,0.0) 
+    
+    
+    ############## edge on view panel
+    plot_configure(ax3, view_azim=65, view_elev=-5, view_radius=.01,light_source=True,lw = 3)
+    plot_traj(ax3, "Parker Solar Probe", t_snap=t, frame="HEEQ", custom_data = 'sunpy', color='k')
+    plot_3dcore(ax3, model_obj, t, color=C_A, light_source = True)
+    plot_traj(ax3, "Solar Orbiter", t_snap = t, frame="HEEQ", custom_data = 'sunpy', color='k')
+
+    plot_shift(ax3,0.26,-0.41,0.08,0.0)
+    
+    plt.annotate('$t_{launch}$ +',[0.45,0.15],ha='center',xycoords='figure fraction',fontsize=20)
+    plt.annotate(str(frametime),[0.5,0.15],ha='center',xycoords='figure fraction',fontsize=20)
+    plt.annotate('hours',[0.54,0.15],ha='center',xycoords='figure fraction',fontsize=20)
+    
+    return fig
+    
+    
 def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, traj = 50, filepath=None, custom_data=False, save_fig = True, legend = True, title = True,**kwargs):
     
     """
