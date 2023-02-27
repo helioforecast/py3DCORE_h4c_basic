@@ -12,11 +12,11 @@ from matplotlib.widgets import Slider, Button
 
 from matplotlib.colors import LightSource
 
-
 import datetime as datetime
 from datetime import timedelta
 import py3dcore_h4c
 from py3dcore_h4c.fitter.base import custom_observer, BaseFitter, get_ensemble_mean
+
 
 from sunpy.coordinates import frames, get_horizons_coord
 import heliosat
@@ -293,7 +293,7 @@ def plot_traj(ax, sat, t_snap, frame="HEEQ", traj_pos=True, traj_minor=None, cus
 
 def getpos(sc, date, start, end):
     
-    '''returns the positions for a spacecraft using sunpy'''
+    """returns the positions for a spacecraft using bett""" 
     
     coord = get_horizons_coord(sc, time={'start': start, 'stop': end, 'step': '60m'})  
     heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
@@ -317,9 +317,9 @@ def getpos(sc, date, start, end):
     
     logger.info("%s - r: %f, lon: %f, lat: %f, ", sc, r[ind], heeq.lon.value[ind],heeq.lat.value[ind])
     
-    pos= np.asarray([r[ind],heeq.lon.value[ind], heeq.lat.value[ind]])
+    pos= np.asarray([r[ind], heeq.lon.value[ind], heeq.lat.value[ind]])
     
-    traj = np.asarray([r,heeq.lon.value, heeq.lat.value])
+    traj = np.asarray([r, heeq.lon.value, heeq.lat.value])
     
     return t, pos, traj
 
@@ -596,6 +596,8 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
         
     t, b = observer_obj.get([start, end], "mag", reference_frame="HEEQ", as_endpoints=True)
     pos = observer_obj.trajectory(t, reference_frame="HEEQ")
+    print(pos)
+    
     if best == True:
         model_obj = returnfixedmodel(filepath)
         
@@ -699,12 +701,22 @@ def insituprofiles(observer, date=None, start=None, end=None, filepath=None, sav
     if end == None:
         logger.info("Please specify end time of plot")
         
-    t = np.asarray([start + datetime.timedelta(hours=i) for i in range(96)])
-    end = start + datetime.timedelta(hours=96)
+    t = np.asarray([start + datetime.timedelta(hours=i) for i in range(168)])
+    end = start + datetime.timedelta(hours=168)
     ttt,pos_temp,traj = getpos(observer, date, start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
-    pos = [[traj[0][i],traj[1][i],traj[2][i]] for i in range(len(traj[0]))]
+    pos1 = [[traj[0][i],traj[1][i],traj[2][i]] for i in range(len(traj[0]))]
+    # print(pos1)
     
+    r_temp = [traj[0][i] for i in range(len(traj[0]))]
+    lon_temp = [traj[1][i] for i in range(len(traj[0]))]
+    lat_temp = [traj[2][i] for i in range(len(traj[0]))]
     
+    pos_x = r_temp * np.cos(np.deg2rad(lon_temp)) * np.cos(np.deg2rad(lat_temp))
+    pos_y = r_temp * np.sin(np.deg2rad(lon_temp)) * np.cos(np.deg2rad(lat_temp))
+    pos_z = r_temp * np.sin(np.deg2rad(lat_temp))
+    
+    pos = [[pos_x[i],pos_y[i],pos_z[i]] for i in range(len(pos_x))]
+    # print(pos)
 
     if best == True:
         model_obj = returnfixedmodel(filepath)
@@ -843,7 +855,7 @@ def returnfixedmodel(filepath, fixed_iparams_arr=None):
     
     else:
         try: 
-            fixed_parameters_arr
+            fixed_iparams_arr_t
             logger.info("Plotting run with fixed parameters.")
             model_obj.iparams_arr = np.expand_dims(fixed_iparams_arr, axis=0)
     
