@@ -20,16 +20,16 @@ logging.getLogger("heliosat.spacecraft").setLevel("WARNING")
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    t_launch = datetime.datetime(2022, 9, 5, 18, tzinfo=datetime.timezone.utc) # launch time assumed at CME impact at PSP at 14.72 Rs
+    t_launch = datetime.datetime(2022, 9, 5, 16, tzinfo=datetime.timezone.utc) # 
 
-    t_s = datetime.datetime(2022, 9, 7, 8, tzinfo=datetime.timezone.utc) 
-    t_e = datetime.datetime(2022, 9, 8, 3, tzinfo=datetime.timezone.utc)
+    t_s = datetime.datetime(2022, 9, 5, 18, tzinfo=datetime.timezone.utc) 
+    t_e = datetime.datetime(2022, 9, 6, 1, tzinfo=datetime.timezone.utc)
 
     t_fit = [
-        datetime.datetime(2022, 9, 7, 9, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 7, 15, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 7, 20, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 8, 2, tzinfo=datetime.timezone.utc)
+        datetime.datetime(2022, 9, 5, 18, 30, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 5, 20, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 5, 22, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 6, 0, tzinfo=datetime.timezone.utc)
      ]
 
 # Restraining the initial values for the ensemble members leads to more efficient fitting.
@@ -43,7 +43,7 @@ if __name__ == "__main__":
 #         3: inc          inclination
 # 
 #         4: dia          cross section diameter at 1 AU
-#         5: delta        cross section aspect ratio
+#         5: delta        cross section aspect rati
 # 
 #         6: r0           initial cme radius
 #         7: v0           initial cme velocity
@@ -66,12 +66,12 @@ if __name__ == "__main__":
         "ensemble_size": int(2**16), #2**17
         "iparams": {
            "cme_longitude": {
-               "maximum": 200,
-               "minimum": 100
+               "maximum": 180,
+               "minimum": -180
            },
            "cme_latitude": {
-               "maximum": 10,
-               "minimum": -10
+               "maximum": 20,
+               "minimum": -20
            },
            "cme_inclination": {
                "maximum": 30,
@@ -83,25 +83,25 @@ if __name__ == "__main__":
            }, 
            "cme_launch_velocity": {
                "maximum": 2000,
-               "minimum": 1000
+               "minimum": 500
            },
            "cme_launch_radius": {
-               "maximum": 16,
-               "minimum": 14
+               "maximum": 14,
+               "minimum": 10
            },
            "t_factor": {
                "maximum": 250,
-               "minimum": 50
+               "minimum": -250
            },
             "background_velocity": {
-               "maximum": 700,
-               "minimum": 400
+               "maximum": 800,
+               "minimum": 100
            } 
         }
     }
     
     
-    output = 'solo06092022_heeq_1024_restrP_4/'
+    output = 'psp06092022_heeq_512_1/'
     
 
     # Deleting a non-empty folder
@@ -114,6 +114,6 @@ if __name__ == "__main__":
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
-    fitter.add_observer("SOLO", t_fit, t_s, t_e)
+    fitter.add_observer("PSP", t_fit, t_s, t_e)
 
-    fitter.run(ensemble_size=1024, reference_frame="HEEQ", jobs=128, workers=128, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=True, custom_data='solo_2022sep.p')
+    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=128, workers=128, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=True)#, custom_data='solo_2022sep.p')

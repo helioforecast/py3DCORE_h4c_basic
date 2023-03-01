@@ -594,7 +594,11 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
     else:
         observer_obj = custom_observer(custom_data)
         
-    t, b = observer_obj.get([start, end], "mag", reference_frame="HEEQ", as_endpoints=True)
+    dt, b = observer_obj.get([start, end], "mag", reference_frame="HEEQ", as_endpoints=True)
+    # print(t)
+    t = []
+    t = [datetime.datetime.fromtimestamp(dt[i]) for i in range(len(dt))] # .strftime('%Y-%m-%d %H:%M:%S.%f')
+    #print(t)
     pos = observer_obj.trajectory(t, reference_frame="HEEQ")
     print(pos)
     
@@ -629,7 +633,7 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
         obs_title = 'Solar Orbiter'
 
         
-    if observer == 'psp':
+    if observer == 'PSP':
         obs_title = 'Parker Solar Probe'
 
     plt.figure(figsize=(20, 10))
