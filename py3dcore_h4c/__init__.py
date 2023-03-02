@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from .fitter import ABC_SMC, BaseFitter, generate_ensemble
-from .models import ToroidalModel, SplineModel
+from .models import ToroidalModel
 from .swbg import SolarWindBG
 
 

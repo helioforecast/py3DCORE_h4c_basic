@@ -679,7 +679,6 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
     if save_fig == True:
         plt.savefig(filepath[:-7] + 'fullinsitu.pdf', dpi=300)    
     plt.show()
-    return 
     
 
 def insituprofiles(observer, date=None, start=None, end=None, filepath=None, save_fig=True, best=True, mean=False, legend=True, fixed=None):
