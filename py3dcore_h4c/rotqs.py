@@ -73,10 +73,10 @@ def _numba_quaternion_rotate(vec: np.ndarray, q: np.ndarray) -> np.ndarray:
     return np.array([rb, rc, rd])
 
 
-@guvectorize([
-    "void(float32, float32[:], float32[:])",
-    "void(float64, float64[:], float64[:])"],
-    '(), (n) -> (n)')
+@guvectorize(
+    ["void(float32, float32[:], float32[:])", "void(float64, float64[:], float64[:])"],
+    "(), (n) -> (n)",
+)
 def _numba_quaternion_create(rot: np.ndarray, vec: np.ndarray, res: np.ndarray) -> None:
     argument = np.radians(rot / 2)
 
@@ -88,19 +88,21 @@ def _numba_quaternion_create(rot: np.ndarray, vec: np.ndarray, res: np.ndarray) 
     res[3] = vec[3] * np.sin(argument)
 
 
-@guvectorize([
-    "void(float32[:], float32[:])",
-    "void(float64[:], float64[:])"],
-    '(n) -> (n)')
+@guvectorize(
+    ["void(float32[:], float32[:])", "void(float64[:], float64[:])"], "(n) -> (n)"
+)
 def _numba_quaternion_conjugate(q: np.ndarray, res: np.ndarray) -> None:
     res[0] = q[0]
     res[1:] = -q[1:]
 
 
-@guvectorize([
-    "void(float32[:], float32[:], float32[:])",
-    "void(float64[:], float64[:], float64[:])"],
-    '(n), (n) -> (n)')
+@guvectorize(
+    [
+        "void(float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:])",
+    ],
+    "(n), (n) -> (n)",
+)
 def _numba_quaternion_multiply(q1: np.ndarray, q2: np.ndarray, res: np.ndarray) -> None:
     (q1a, q1b, q1c, q1d) = (q1[0], q1[1], q1[2], q1[3])
     (q2a, q2b, q2c, q2d) = (q2[0], q2[1], q2[2], q2[3])

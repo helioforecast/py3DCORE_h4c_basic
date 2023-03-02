@@ -168,11 +168,11 @@ def thin_torus_gh(q: np.ndarray, iparams: np.ndarray, sparams: np.ndarray, q_xs:
 
         # ellipse circumference
         h = (delta - 1)**2 / (1 + delta)**2
-        E = np.pi * (1 + delta) * (1 + 3 * h / (10 + np.sqrt(4 - 3 * h)))
+        Efac = np.pi * (1 + delta) * (1 + 3 * h / (10 + np.sqrt(4 - 3 * h)))
 
-        t = Tfac * rho_1 / rho_0 / 2 / np.pi * np.sin(q1 / 2)**2
+        t = Tfac * rho_1 / rho_0 / 2 / np.pi * np.sin(q1 / 2)**2/Efac
 
-        denom = (1 + t**2 * q0**2)
+        denom = 1 + t**2 * q0**2
         bpsi = b_t / denom * fluxfactor
         bphi = b_t * t * q0 / denom / (1 + q0 * rho_1 / rho_0 * np.cos(q2)) * fluxfactor 
 

@@ -112,7 +112,7 @@ class SimulationBlackBox(object):
         #iparams_meta is updated
         self.update_iparams_meta()
  
-    def generator(self, random_seed: int = 42) -> None:
+    def generator(self, random_seed: int = 42, max_iterations: int = 100) -> None:
         
         """
         Handles the distributions for each initial parameter and generates quaternions
@@ -137,12 +137,12 @@ class SimulationBlackBox(object):
             #  inner function taking a callable func, max and min value
             def trunc_generator(func: Callable, max_v: float, min_v: float, size: int, **kwargs: Any) -> np.ndarray:
                 numbers = func(size=size, **kwargs)
-                for _ in range(100):
-                    flt = ((numbers > max_v) | (numbers < min_v)) # bitwise or function
+                for _ in range(max_iterations):
+                    flt = (numbers > max_v) | (numbers < min_v) # bitwise or function
                     if np.sum(flt) == 0:
                         return numbers
                     numbers[flt] = func(size=len(flt), **kwargs)[flt]
-                raise RuntimeError("drawing numbers inefficiently (%i/%i after 100 iterations)", len(flt), size)                
+                raise RuntimeError("drawing numbers inefficiently (%i/%i after %i iterations)", len(flt), size, max_iterations)                
 
             # generate values according to given distribution
             if dist in ["fixed", "fixed_value"]:
@@ -152,11 +152,11 @@ class SimulationBlackBox(object):
             elif dist in ["gaussian", "normal"]:
                 self.iparams_arr[:, ii] = trunc_generator(np.random.normal, iparam["maximum"], iparam["minimum"], self.ensemble_size, loc=iparam["mean"], scale=iparam["std"])
             else:
-                raise NotImplementedError("parameter distribution \"{0!s}\" is not implemented".format(dist))
+                raise NotImplementedError(
+                    'parameter distribution "%s" is not implemented', dist
+                )
 
         generate_quaternions(self.iparams_arr, self.qs_sx, self.qs_xs) # quaternions are generated to rotate from s to x and back
-
-        self.dt_t = self.dt_0
 
     def propagator(self, dt_to: Union[str, datetime.datetime]) -> None:
         # use propagator of model class
@@ -238,8 +238,6 @@ class SimulationBlackBox(object):
 
         generate_quaternions(self.iparams_arr, self.qs_sx, self.qs_xs) # quaternions are generated
 
-        self.dt_t = self.dt_0
-
     def update_kernels(self, kernel_mode: str = "cm") -> None:
         if kernel_mode == "cm":
             self.iparams_kernel = 2 * np.cov(self.iparams_arr, rowvar=False)
@@ -247,6 +245,7 @@ class SimulationBlackBox(object):
             # due to aweights sometimes very small numbers are generated
             #self.iparams_kernel[np.where(self.iparams_kernel < 1e-12)] = 0
         elif kernel_mode == "lcm":
+            # TODO: implement local cm method
             raise NotImplementedError
         else:
             raise NotImplementedError
@@ -262,6 +261,9 @@ class SimulationBlackBox(object):
             raise NotImplementedError
         else:
             raise NotImplementedError
+            
+        # TODO: INCLUDE PRIORS (CURRENTL ASSUMES UNIFORM)
+
 
         self.iparams_weight /= np.sum(self.iparams_weight)
 
@@ -291,8 +293,6 @@ class SimulationBlackBox(object):
 
         generate_quaternions(self.iparams_arr, self.qs_sx, self.qs_xs)
 
-        self.dt_t = self.dt_0
-
     def update_iparams_meta(self) -> None:
         
         """
@@ -312,6 +312,13 @@ class SimulationBlackBox(object):
                 raise ValueError("invalid parameter range selected")
 
             if dist in ["fixed", "fixed_value"]:
+                if (
+                    iparam["maximum"] < iparam["default_value"]
+                    or iparam["default_value"] < iparam["minimum"]
+                ):
+                    raise ValueError(
+                        "invalid parameter range selected, default_value out of range when using fixed distribution"
+                    )
                 self.iparams_meta[ii, 1] = 0
                 self.iparams_meta[ii, 3] = iparam["maximum"]
                 self.iparams_meta[ii, 4] = iparam["minimum"]
@@ -326,7 +333,10 @@ class SimulationBlackBox(object):
                 self.iparams_meta[ii, 5] = iparam["mean"]
                 self.iparams_meta[ii, 6] = iparam["std"]
             else:
-                raise NotImplementedError("parameter distribution \"{0!s}\" is not implemented".format(dist))
+                raise NotImplementedError(
+                    'parameter distribution "{0!s}" is not implemented'.format(dist)
+                )
+
 
             if bound == "continuous":
                 self.iparams_meta[ii, 2] = 0
@@ -401,7 +411,7 @@ def _numba_perturb_kernel_cm(iparams_new: np.ndarray, iparams_old: np.ndarray, w
             candidate = iparams_old[si] + offset[:, c]
 
             for pi in range(len(meta)):
-                is_oob = ((candidate[pi] > meta[pi, 3]) | (candidate[pi] < meta[pi, 4]))
+                is_oob = (candidate[pi] > meta[pi, 3]) | (candidate[pi] < meta[pi, 4])
 
                 if is_oob:
                     # shift for continous variables

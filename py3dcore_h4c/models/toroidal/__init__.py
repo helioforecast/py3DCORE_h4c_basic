@@ -81,7 +81,7 @@ class ToroidalModel(SimulationBlackBox):
             if k in iparams_dict:
                 iparams_dict[k].update(v)
             else:
-                raise KeyError("key \"%s\" not defined in parameters.json", k)
+                raise KeyError('key "%s" not defined in parameters.json', k)
 
         super(ToroidalModel, self).__init__(dt_0, iparams=iparams_dict, sparams=4, ensemble_size=ensemble_size, dtype=dtype)
 

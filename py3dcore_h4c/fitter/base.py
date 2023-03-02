@@ -232,7 +232,7 @@ class BaseFitter(object):
             setattr(self, k, v)
 
     def _run(self, *args: Any, **kwargs: Any) -> None:
-        pass
+        raise NotImplementedError()
 
 
 class FittingData(object):
@@ -298,6 +298,31 @@ class FittingData(object):
                     profiles[1 + _offset:_offset + (dtl + 2) - 1, :, c][null_flt] += noise[dt][null_flt]
 
                 _offset += dtl + 2
+        
+        elif self.noise_model == "gaussian":
+            _offset = 0
+            for o in range(self.length):
+                dtl = self.data_l[o]
+                sampling_fac = np.sqrt(self.sampling_freq)
+
+                ensemble_size = len(profiles[0])
+
+                null_flt = profiles[1 + _offset : _offset + (dtl + 2) - 1, :, 0] != 0
+
+                # generate noise for each component
+                for c in range(3):
+                    noise = (
+                        np.random.normal(0, 1, size=(ensemble_size, dtl))
+                        .astype(np.float32)
+                        .T
+                    )
+
+                    profiles[1 + _offset : _offset + (dtl + 2) - 1, :, c][
+                        null_flt
+                    ] += noise[null_flt]
+
+                _offset += dtl + 2
+                
         else:
             raise NotImplementedError
 

@@ -591,16 +591,17 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
     if custom_data == False:
         observer_obj = getattr(heliosat, observer)() # get observer obj
         logger.info("Using HelioSat to retrieve observer data")
+        dt, b = observer_obj.get([start, end], "mag", reference_frame="HEEQ", as_endpoints=True)
+    # print(t)
+        t = []
+        t = [datetime.datetime.fromtimestamp(dt[i]) for i in range(len(dt))] # .strftime('%Y-%m-%d %H:%M:%S.%f')
     else:
         observer_obj = custom_observer(custom_data)
-        
-    dt, b = observer_obj.get([start, end], "mag", reference_frame="HEEQ", as_endpoints=True)
-    # print(t)
-    t = []
-    t = [datetime.datetime.fromtimestamp(dt[i]) for i in range(len(dt))] # .strftime('%Y-%m-%d %H:%M:%S.%f')
+        t, b = observer_obj.get([start, end], "mag", reference_frame="HEEQ", as_endpoints=True)
+    
     #print(t)
     pos = observer_obj.trajectory(t, reference_frame="HEEQ")
-    print(pos)
+    #print(pos)
     
     if best == True:
         model_obj = returnfixedmodel(filepath)
@@ -678,6 +679,7 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
     if save_fig == True:
         plt.savefig(filepath[:-7] + 'fullinsitu.pdf', dpi=300)    
     plt.show()
+    return 
     
 
 def insituprofiles(observer, date=None, start=None, end=None, filepath=None, save_fig=True, best=True, mean=False, legend=True, fixed=None):
@@ -689,7 +691,7 @@ def insituprofiles(observer, date=None, start=None, end=None, filepath=None, sav
         observer          name of the observer
         start             starting point of the plot
         end               ending point of the plot
-        filepath              where to find the fitting results
+        filepath          where to find the fitting results
         save_fig          whether to save the created figure
         best              whether to plot run with min(eps)
         mean              whether to plot run with mean parameter values

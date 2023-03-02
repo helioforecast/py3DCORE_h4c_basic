@@ -68,7 +68,7 @@ def sumstat(values: np.ndarray, reference: np.ndarray, stype: str = "norm_rmse",
     else:
         raise NotImplementedError
 
-
+@numba.njit
 def rmse(values: np.ndarray, reference: np.ndarray, mask: Optional[np.ndarray] = None) -> np.ndarray:
     rmse = np.zeros(len(values[0]))
     """

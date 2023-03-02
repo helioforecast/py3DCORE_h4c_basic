@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""abc_smc.py
+Implements an ABC-SMC algorithm.
+"""
+
 import datetime as datetime
 import logging as logging
 import heliosat as heliosat
