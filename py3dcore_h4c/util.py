@@ -137,45 +137,48 @@ def cdftopickle(magpath, swapath, sc):
     
     if sc == 'solo':
         fullname = 'solar orbiter'
+    if sc == 'psp':
+        fullname = 'parker solar probe'
     
-    ll_path = swapath
+    if os.path.exists(swapath):
+        ll_path = swapath
     
-    files = os.listdir(ll_path)
-    files.sort()
-    llfiles = [os.path.join(ll_path, f) for f in files if f.endswith('.cdf')]
+        files = os.listdir(ll_path)
+        files.sort()
+        llfiles = [os.path.join(ll_path, f) for f in files if f.endswith('.cdf')]
     
-    timep=np.zeros(0,dtype=[('time',object)])
-    den=np.zeros(0)
-    temp=np.zeros(0)
-    vr=np.zeros(0)
-    vt=np.zeros(0)
-    vn=np.zeros(0)
-    
-    for i in np.arange(0,len(llfiles)):
-        p1 = cdflib.CDF(llfiles[i])
-        
-        den1=p1.varget('N')
-        speed1=p1.varget('V_RTN')
-        temp1=p1.varget('T')
+        timep=np.zeros(0,dtype=[('time',object)])
+        den=np.zeros(0)
+        temp=np.zeros(0)
+        vr=np.zeros(0)
+        vt=np.zeros(0)
+        vn=np.zeros(0)
 
-        vr1=speed1[:,0]
-        vt1=speed1[:,1]
-        vn1=speed1[:,2]
+        for i in np.arange(0,len(llfiles)):
+            p1 = cdflib.CDF(llfiles[i])
 
-        vr=np.append(vr1,vr)
-        vt=np.append(vt1,vt)
-        vn=np.append(vn1,vn)
+            den1=p1.varget('N')
+            speed1=p1.varget('V_RTN')
+            temp1=p1.varget('T')
 
+            vr1=speed1[:,0]
+            vt1=speed1[:,1]
+            vn1=speed1[:,2]
 
-        temp=np.append(temp1,temp)
-        den=np.append(den1,den)
+            vr=np.append(vr1,vr)
+            vt=np.append(vt1,vt)
+            vn=np.append(vn1,vn)
 
 
-        time1=p1.varget('EPOCH')
-        t1=parse_time(cdflib.cdfastropy.convert_to_astropy(time1, format=None)).datetime
-        timep=np.append(timep,t1)
-        
-        temp=temp*(1.602176634*1e-19)/(1.38064852*1e-23) # from ev to K 
+            temp=np.append(temp1,temp)
+            den=np.append(den1,den)
+
+
+            time1=p1.varget('EPOCH')
+            t1=parse_time(cdflib.cdfastropy.convert_to_astropy(time1, format=None)).datetime
+            timep=np.append(timep,t1)
+
+            temp=temp*(1.602176634*1e-19)/(1.38064852*1e-23) # from ev to K 
 
     ll_path = magpath
 
@@ -217,11 +220,11 @@ def cdftopickle(magpath, swapath, sc):
     time_int_mat=mdates.date2num(time_int)
     time1_mat=mdates.date2num(time1)
     timep_mat=mdates.date2num(timep)  
-    
-    solo_ll=np.zeros(np.size(time_int),dtype=[('time',object),('bx', float),('by', float),\
-            ('bz', float),('bt', float),('r', float),('lat', float),('lon', float),\
-            ('x', float),('y', float),('z', float),('vx', float),\
-            ('vy', float),('vz', float),('vt', float),('tp', float),('np', float) ] )   
+    if os.path.exists(swapath):
+        solo_ll=np.zeros(np.size(time_int),dtype=[('time',object),('bx', float),('by', float),('bz', float),('bt', float),('r', float),('lat', float),('lon', float),('x', float),('y', float),('z', float),('vx', float),('vy', float),('vz', float),('vt', float),('tp', float),('np', float) ] )
+    else:
+        solo_ll=np.zeros(np.size(time_int),dtype=[('time',object),('bx', float),('by', float),('bz', float),('bt', float),('r', float),('lat', float),('lon', float),('x', float),('y', float),('z', float)] )
+        
 
     solo_ll = solo_ll.view(np.recarray)  
 
@@ -231,14 +234,14 @@ def cdftopickle(magpath, swapath, sc):
     solo_ll.by=np.interp(time_int_mat, time1_mat,bt1)
     solo_ll.bz=np.interp(time_int_mat, time1_mat,bn1)
     solo_ll.bt=np.sqrt(solo_ll.bx**2+solo_ll.by**2+solo_ll.bz**2)
-
-
-    solo_ll.np=np.interp(time_int_mat, timep_mat,den)
-    solo_ll.tp=np.interp(time_int_mat, timep_mat,temp) 
-    solo_ll.vx=np.interp(time_int_mat, timep_mat,vr)
-    solo_ll.vy=np.interp(time_int_mat, timep_mat,vt)
-    solo_ll.vz=np.interp(time_int_mat, timep_mat,vn)
-    solo_ll.vt=np.sqrt(solo_ll.vx**2+solo_ll.vy**2+solo_ll.vz**2)
+    
+    if os.path.exists(swapath):
+        solo_ll.np=np.interp(time_int_mat, timep_mat,den)
+        solo_ll.tp=np.interp(time_int_mat, timep_mat,temp) 
+        solo_ll.vx=np.interp(time_int_mat, timep_mat,vr)
+        solo_ll.vy=np.interp(time_int_mat, timep_mat,vt)
+        solo_ll.vz=np.interp(time_int_mat, timep_mat,vn)
+        solo_ll.vt=np.sqrt(solo_ll.vx**2+solo_ll.vy**2+solo_ll.vz**2)
 
 
     #spacecraft position with astrospice
