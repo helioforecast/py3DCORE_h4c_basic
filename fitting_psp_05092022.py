@@ -26,9 +26,9 @@ if __name__ == "__main__":
     t_e = datetime.datetime(2022, 9, 6, 1, tzinfo=datetime.timezone.utc)
 
     t_fit = [
-        datetime.datetime(2022, 9, 5, 18, 30, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 5, 20, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 5, 22, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 5, 20, 30, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 5, 21, 30, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 5, 23, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 6, 0, tzinfo=datetime.timezone.utc)
      ]
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         "iparams": {
            "cme_longitude": {
                "maximum": 180,
-               "minimum": -180
+               "minimum": 50
            },
            "cme_latitude": {
                "maximum": 20,
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     }
     
     
-    output = 'psp06092022_heeq_512_1/'
+    output = 'psp05092022_heeq_512_1/'
     
 
     # Deleting a non-empty folder
@@ -116,4 +116,4 @@ if __name__ == "__main__":
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
     fitter.add_observer("PSP", t_fit, t_s, t_e)
 
-    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=128, workers=128, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=True)#, custom_data='solo_2022sep.p')
+    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=2, workers=2, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=True, custom_data='psp_2022sep.p')
