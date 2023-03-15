@@ -27,6 +27,9 @@ from sunpy.coordinates import frames, get_horizons_coord
 from sunpy.time import parse_time
 import astrospice
 
+import heliopy.data.spice as spicedata
+import heliopy.spice as spice
+
 import logging
 
 import numba 
@@ -140,6 +143,13 @@ def cdftopickle(magpath, swapath, sc):
     if sc == 'psp':
         fullname = 'parker solar probe'
     
+    timep=np.zeros(0,dtype=[('time',object)])
+    den=np.zeros(0)
+    temp=np.zeros(0)
+    vr=np.zeros(0)
+    vt=np.zeros(0)
+    vn=np.zeros(0)
+        
     if os.path.exists(swapath):
         ll_path = swapath
     
@@ -147,12 +157,6 @@ def cdftopickle(magpath, swapath, sc):
         files.sort()
         llfiles = [os.path.join(ll_path, f) for f in files if f.endswith('.cdf')]
     
-        timep=np.zeros(0,dtype=[('time',object)])
-        den=np.zeros(0)
-        temp=np.zeros(0)
-        vr=np.zeros(0)
-        vt=np.zeros(0)
-        vn=np.zeros(0)
 
         for i in np.arange(0,len(llfiles)):
             p1 = cdflib.CDF(llfiles[i])
@@ -194,7 +198,11 @@ def cdftopickle(magpath, swapath, sc):
     for i in np.arange(0,len(llfiles)):
         m1 = cdflib.CDF(llfiles[i])
         
-        b=m1.varget('B_RTN')
+        try:
+            b=m1.varget('B_RTN')
+        except:
+            b=m1.varget('psp_fld_l2_mag_RTN_1min')
+            
         br=b[:,0]
         bt=b[:,1]
         bn=b[:,2]
@@ -203,8 +211,11 @@ def cdftopickle(magpath, swapath, sc):
         bt1=np.append(bt1,bt)
         bn1=np.append(bn1,bn)
 
-        time=m1.varget('EPOCH')
-
+        try:
+            time=m1.varget('EPOCH')
+        except:
+            time=m1.varget('epoch_mag_RTN_1min')
+            
         t1=parse_time(cdflib.cdfastropy.convert_to_astropy(time, format=None)).datetime
         time1=np.append(time1,t1)
         
@@ -244,18 +255,35 @@ def cdftopickle(magpath, swapath, sc):
         solo_ll.vt=np.sqrt(solo_ll.vx**2+solo_ll.vy**2+solo_ll.vz**2)
 
 
-    #spacecraft position with astrospice
-    kernels = astrospice.registry.get_kernels(fullname, 'predict')
-    solo_kernel = kernels[0]
+    try:
+        #spacecraft position with astrospice
+        kernels = astrospice.registry.get_kernels(fullname, 'predict')
+        solo_kernel = kernels[0]
 
-    solo_coords = astrospice.generate_coords(fullname, time_int)
-    solo_coords_heeq = solo_coords.transform_to(sunpy.coordinates.HeliographicStonyhurst())
+        solo_coords = astrospice.generate_coords(fullname, time_int)
+        
+        solo_coords_heeq = solo_coords.transform_to(sunpy.coordinates.HeliographicStonyhurst())
 
-    solo_ll.lon=solo_coords_heeq.lon.value
-    solo_ll.lat=solo_coords_heeq.lat.value
-    solo_ll.r=solo_coords_heeq.radius.to(u.au).value
-    
-    solo_ll = sphere2cart(solo_ll)
+        solo_ll.lon=solo_coords_heeq.lon.value
+        solo_ll.lat=solo_coords_heeq.lat.value
+        solo_ll.r=solo_coords_heeq.radius.to(u.au).value    
+
+        solo_ll = sphere2cart(solo_ll)
+        
+    except:
+        
+        #solo_coords = get_horizons_coord(sc, time_int)
+        #solo_coords = [get_horizons_coord(sc, i.strftime('%Y-%m-%d %H:%M')) for i in time_int[0:10]]
+        
+        spice.furnish(spicedata.get_kernel('psp_pred'))
+        psp2=spice.Trajectory('SPP')
+        psp2.generate_positions(time_int, 'Sun','HEEQ')
+        psp2.change_units(astropy.units.AU)
+        
+        solo_ll.x = psp2.x
+        solo_ll.y = psp2.y
+        solo_ll.z = psp2.z
+
     
     return solo_ll
     
@@ -267,5 +295,3 @@ def sphere2cart(ll):
     ll.z = ll.r * np.sin(np.deg2rad(ll.lat))
     
     return ll
-
-    

@@ -23,13 +23,13 @@ if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 9, 5, 16, tzinfo=datetime.timezone.utc) # 
 
     t_s = datetime.datetime(2022, 9, 5, 18, tzinfo=datetime.timezone.utc) 
-    t_e = datetime.datetime(2022, 9, 6, 1, tzinfo=datetime.timezone.utc)
+    t_e = datetime.datetime(2022, 9, 5, 23, tzinfo=datetime.timezone.utc)
 
     t_fit = [
         datetime.datetime(2022, 9, 5, 20, 30, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 5, 21, 30, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 5, 23, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 6, 0, tzinfo=datetime.timezone.utc)
+        datetime.datetime(2022, 9, 5, 22, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 5, 22, 30, tzinfo=datetime.timezone.utc)
      ]
 
 # Restraining the initial values for the ensemble members leads to more efficient fitting.
