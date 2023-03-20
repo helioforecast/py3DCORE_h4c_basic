@@ -345,10 +345,13 @@ def abc_smc_worker(*args: Any) -> Tuple[np.ndarray, np.ndarray]:
     # TODO: sort data_dt by time
     # sort
     sort_index = np.argsort([_.timestamp() for _ in data_obj.data_dt]) # the index is sorted by time (sometimes this isn't the case by default)
-    print(data_obj.data_dt)
+    # print(data_obj.data_dt)
     # generate synthetic profiles
-    profiles = np.array(model_obj.simulator(np.array(data_obj.data_dt)[sort_index], np.array(data_obj.data_o)[sort_index])[0], dtype=model_obj.dtype) #obtain magnetic field
-
+    try: 
+        profiles = np.array(model_obj.simulator(np.array(data_obj.data_dt)[sort_index], np.array(data_obj.data_o)[sort_index])[0], dtype=model_obj.dtype) # obtain magnetic field
+    except IndexError:
+        raise IndexError('Data not in file, try to set different times!')
+        
     # resort profiles
     sort_index_rev = np.argsort(sort_index)
     profiles = profiles[sort_index_rev]
