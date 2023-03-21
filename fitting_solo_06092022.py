@@ -101,7 +101,7 @@ if __name__ == "__main__":
     }
     
     
-    output = 'solo06092022_heeq_512_restrP_1/'
+    output = 'solo06092022_heeq_512_restrP_test/'
     
 
     # Deleting a non-empty folder
@@ -116,4 +116,4 @@ if __name__ == "__main__":
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
     fitter.add_observer("SOLO", t_fit, t_s, t_e)
 
-    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=2, workers=2, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=True, custom_data='solo_2022sep.p')
+    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=2, workers=2, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=False, custom_data='solo_2022sep.p')

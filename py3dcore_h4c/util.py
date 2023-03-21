@@ -139,9 +139,9 @@ def cdftopickle(magpath, swapath, sc):
     '''creating a pickle file from cdf'''
     
     if sc == 'solo':
-        fullname = 'solar orbiter'
+        fullname = 'Solar Orbiter'
     if sc == 'psp':
-        fullname = 'parker solar probe'
+        fullname = 'Parker Solar Probe'
     
     timep=np.zeros(0,dtype=[('time',object)])
     den=np.zeros(0)
@@ -241,9 +241,9 @@ def cdftopickle(magpath, swapath, sc):
 
 
     solo_ll.time=time_int
-    solo_ll.bx=np.interp(time_int_mat, time1_mat,br1)
-    solo_ll.by=np.interp(time_int_mat, time1_mat,bt1)
-    solo_ll.bz=np.interp(time_int_mat, time1_mat,bn1)
+    solo_ll.bx=np.interp(time_int_mat, time1_mat[~np.isnan(br1)],br1[~np.isnan(br1)])
+    solo_ll.by=np.interp(time_int_mat, time1_mat[~np.isnan(br1)],bt1[~np.isnan(bt1)])
+    solo_ll.bz=np.interp(time_int_mat, time1_mat[~np.isnan(br1)],bn1[~np.isnan(bn1)])
     solo_ll.bt=np.sqrt(solo_ll.bx**2+solo_ll.by**2+solo_ll.bz**2)
     
     if os.path.exists(swapath):
@@ -269,20 +269,31 @@ def cdftopickle(magpath, swapath, sc):
         solo_ll.r=solo_coords_heeq.radius.to(u.au).value    
 
         solo_ll = sphere2cart(solo_ll)
+        print(solo_ll.x, solo_ll.y, solo_ll.z)
         
-    except:
+    except:  
+        coord = get_horizons_coord(sc, time={'start': time_int[0], 'stop': time_int[-1], 'step': '1m'})  
+        heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
         
-        #solo_coords = get_horizons_coord(sc, time_int)
-        #solo_coords = [get_horizons_coord(sc, i.strftime('%Y-%m-%d %H:%M')) for i in time_int[0:10]]
+        #time=heeq.obstime.to_datetime()
+        solo_ll.r=heeq.radius.value
+        solo_ll.lon=heeq.lon.value
+        solo_ll.lat=heeq.lat.value
         
-        spice.furnish(spicedata.get_kernel('psp_pred'))
-        psp2=spice.Trajectory('SPP')
-        psp2.generate_positions(time_int, 'Sun','HEEQ')
-        psp2.change_units(astropy.units.AU)
+        ###solo_coords = get_horizons_coord(sc, time_int)
+        ###solo_coords = [get_horizons_coord(sc, i.strftime('%Y-%m-%d %H:%M')) for i in time_int[0:10]]
         
-        solo_ll.x = psp2.x
-        solo_ll.y = psp2.y
-        solo_ll.z = psp2.z
+        #spice.furnish(spicedata.get_kernel('psp_pred'))
+        #psp2=spice.Trajectory('SPP')
+        #psp2.generate_positions(time_int, 'Sun','HEEQ')
+        #psp2.change_units(astropy.units.AU)
+        
+        #solo_ll.x = psp2.x
+        #solo_ll.y = psp2.y
+        #solo_ll.z = psp2.z
+        solo_ll = sphere2cart(solo_ll)
+        
+        print(solo_ll.x, solo_ll.y, solo_ll.z)
 
     
     return solo_ll

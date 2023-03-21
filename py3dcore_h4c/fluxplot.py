@@ -295,7 +295,7 @@ def getpos(sc, date, start, end):
     
     """returns the positions for a spacecraft using bett""" 
     
-    coord = get_horizons_coord(sc, time={'start': start, 'stop': end, 'step': '60m'})  
+    coord = get_horizons_coord(sc, time={'start': start, 'stop': end, 'step': '1m'})  
     heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
     hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
 

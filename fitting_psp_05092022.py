@@ -22,12 +22,12 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 9, 5, 16, tzinfo=datetime.timezone.utc) # 
 
-    t_s = datetime.datetime(2022, 9, 5, 18, tzinfo=datetime.timezone.utc) 
+    t_s = datetime.datetime(2022, 9, 5, 20, tzinfo=datetime.timezone.utc) 
     t_e = datetime.datetime(2022, 9, 6, 5, tzinfo=datetime.timezone.utc)
 
     t_fit = [
-        datetime.datetime(2022, 9, 5, 19, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 5, 21, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 5, 22, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 5, 23, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 6, 1, tzinfo=datetime.timezone.utc)
      ]
@@ -70,11 +70,11 @@ if __name__ == "__main__":
                "minimum": -180
            },
            "cme_latitude": {
-               "maximum": 40,
-               "minimum": -40
+               "maximum": 90,
+               "minimum": -90
            },
            "cme_inclination": {
-               "maximum": 40,
+               "maximum": 360,
                "minimum": 0
            }, 
            "cme_aspect_ratio": {
@@ -83,25 +83,25 @@ if __name__ == "__main__":
            }, 
            "cme_launch_velocity": {
                "maximum": 2000,
-               "minimum": 500
+               "minimum": 100
            },
            "cme_launch_radius": {
                "maximum": 14,
-               "minimum": 10
+               "minimum": 8
            },
            "t_factor": {
                "maximum": 250,
                "minimum": -250
            },
             "background_velocity": {
-               "maximum": 1000,
-               "minimum": 100
+               "maximum": 500,
+               "minimum": 50
            } 
         }
     }
     
     
-    output = 'psp05092022_heeq_512_1/'
+    output = 'psp05092022_heeq_512_2/'
     
 
     # Deleting a non-empty folder

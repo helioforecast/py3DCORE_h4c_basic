@@ -20,12 +20,12 @@ logging.getLogger("heliosat.spacecraft").setLevel("WARNING")
 if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 6, 2, 6, tzinfo=datetime.timezone.utc)
 
-    t_s_psp = datetime.datetime(2022, 6, 2, 10, tzinfo=datetime.timezone.utc)
-    t_e_psp = datetime.datetime(2022, 6, 3, 6, tzinfo=datetime.timezone.utc)
+    t_s_psp = datetime.datetime(2022, 6, 2, 14, tzinfo=datetime.timezone.utc)
+    t_e_psp = datetime.datetime(2022, 6, 2, 18, tzinfo=datetime.timezone.utc)
 
-    t_psp = [datetime.datetime(2022, 6, 2, 13, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 6, 2, 14, tzinfo=datetime.timezone.utc),
+    t_psp = [datetime.datetime(2022, 6, 2, 14, 30, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 6, 2, 15, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 6, 2, 15, 30, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 6, 2, 16, tzinfo=datetime.timezone.utc)]
 
 
@@ -63,57 +63,41 @@ if __name__ == "__main__":
         "ensemble_size": int(2**16), 
         "iparams": {
            "cme_longitude": {
-               "maximum": -80,
-               "minimum": -120
+               "maximum": -90,
+               "minimum": -180
            },
            "cme_latitude": {
-               "maximum": 10,
-               "minimum": -30
+               "maximum": 40,
+               "minimum": -40
            },
            "cme_inclination": {
-               "maximum": 20,
+               "maximum": 90,
                "minimum": 0
            }, 
-           "cme_diameter_1au": {
-               "maximum": 0.35,
-               "minimum": 0.2
-           }, 
-           "cme_aspect_ratio": {
-               "maximum": 3.5,
-               "minimum": 2.5
-           }, 
            "cme_launch_radius": {
-               "maximum": 10,
+               "maximum": 15,
                "minimum": 3
            },
            "cme_launch_velocity": {
-               "maximum": 700,
-               "minimum": 300
+               "maximum": 1500,
+               "minimum": 100
            },
            "t_factor": {
-               "maximum": 100,
-               "minimum": 20
-           },
-           "magnetic_field_strength_1au": {
-               "maximum": 20,
-               "minimum": 3
-           },
-           "background_drag": {
-               "maximum": 2,
-               "minimum": 1
+               "maximum": 250,
+               "minimum": -250
            },
            "background_velocity": {
-               "maximum": 400,
-               "minimum": 250
+               "maximum": 1000,
+               "minimum": 100
            } 
             
         }
     }
 
-    output = 'psp02062022_heeq_1024_4FP_run2/'
+    output = 'psp02062022_heeq_512_2/'
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
     fitter.add_observer("PSP", t_psp, t_s_psp, t_e_psp)
 
-    fitter.run(ensemble_size=1024, reference_frame="HEEQ", jobs=64, workers=64, sampling_freq=3600, output=output, eps_quantile=0.25, use_multiprocessing=True)
+    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=2, workers=2, sampling_freq=3600, output=output, eps_quantile=0.25, use_multiprocessing=False, custom_data='psp_2022jun.p')
