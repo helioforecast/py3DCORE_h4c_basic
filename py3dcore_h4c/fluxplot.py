@@ -299,10 +299,10 @@ def getpos(sc, date, start, end):
     heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
     hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
 
-    time=heeq.obstime.to_datetime()
-    r=heeq.radius.value
-    lon=np.deg2rad(heeq.lon.value)
-    lat=np.deg2rad(heeq.lat.value)
+    time = heeq.obstime.to_datetime()
+    r = heeq.radius.value
+    lon = np.deg2rad(heeq.lon.value)
+    lat = np.deg2rad(heeq.lat.value)
     
     # get position of spacecraft for specific date
 
@@ -315,9 +315,9 @@ def getpos(sc, date, start, end):
     ind = t.index(date)    
     logger.info("Indices of date: %i", ind)
     
-    logger.info("%s - r: %f, lon: %f, lat: %f, ", sc, r[ind], heeq.lon.value[ind],heeq.lat.value[ind])
+    logger.info("%s - r: %f, lon: %f, lat: %f, ", sc, r[ind], heeq.lon.value[ind], heeq.lat.value[ind])
     
-    pos= np.asarray([r[ind], heeq.lon.value[ind], heeq.lat.value[ind]])
+    pos = np.asarray([r[ind], heeq.lon.value[ind], heeq.lat.value[ind]])
     
     traj = np.asarray([r, heeq.lon.value, heeq.lat.value])
     
@@ -327,7 +327,7 @@ def plot_shift(axis,extent,cx,cy,cz):
     #shift center of plot
     axis.set_xbound(cx-extent, cx+extent)
     axis.set_ybound(cy-extent, cy+extent)
-    axis.set_zbound(cz-extent*0.75, cz+extent*0.75)
+    axis.set_zbound(cz-extent * 0.75, cz + extent * 0.75)
     
 #define sun here so it does not need to be recalculated every time
 scale=695510/149597870.700 #Rs in km, AU in km
@@ -366,7 +366,7 @@ def full3d_multiview(t_launch, filepath):
     model_obj = returnmodel(filepath)
     
     ######### tilted view
-    plot_configure(ax1, view_azim=150, view_elev=25, view_radius=.2,light_source=True) #view_radius=.08
+    plot_configure(ax1, view_azim=150, view_elev=25, view_radius=.2, light_source=True) #view_radius=.08
 
     plot_3dcore(ax1, model_obj, TP_A, color=C_A,light_source = True)
     plot_3dcore_field(ax1, model_obj, color=C_A, step_size=0.0005, lw=1.0, ls="-")
@@ -512,10 +512,10 @@ def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, traj =
     sns.set_style("ticks",{'grid.linestyle': '--'})
     fsize=15
 
-    fig=plt.figure(figsize=(15,12),dpi=200)
+    fig = plt.figure(figsize=(15,12),dpi=200)
     ax = fig.add_subplot(111, projection='3d')
     
-    plot_configure(ax, view_azim=0, view_elev=90, view_radius=0.8)
+    plot_configure(ax, view_azim=0, view_elev=90, view_radius=0.1)
     
     model_obj = returnmodel(filepath)
     
@@ -623,7 +623,7 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
             
     # get ensemble_data
     if ensemble == True:
-        ed = py3dcore_h4c.generate_ensemble(filepath, t, reference_frame="HEEQ",reference_frame_to="HEEQ", max_index=128, custom_data=custom_data)
+        ed = py3dcore_h4c.generate_ensemble(filepath, t, reference_frame="HEEQ", reference_frame_to="HEEQ", max_index=128, custom_data=custom_data)
     
     lw_insitu = 2  # linewidth for plotting the in situ data
     lw_best = 3  # linewidth for plotting the min(eps) run
@@ -654,15 +654,15 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
             plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best)#, label ='run with min(eps)')
         else:
             plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best)#, label ='run with fixed iparams')
-        plt.plot(t, outa[:, 0], "r", alpha=0.5,linestyle='dashed', lw=lw_best)
-        plt.plot(t, outa[:, 1], "g", alpha=0.5,linestyle='dashed', lw=lw_best)
-        plt.plot(t, outa[:, 2], "b", alpha=0.5,linestyle='dashed', lw=lw_best)
+        plt.plot(t, outa[:, 0], "r", alpha=0.5, linestyle='dashed', lw=lw_best)
+        plt.plot(t, outa[:, 1], "g", alpha=0.5, linestyle='dashed', lw=lw_best)
+        plt.plot(t, outa[:, 2], "b", alpha=0.5, linestyle='dashed', lw=lw_best)
         
     if mean == True:
         plt.plot(t, np.sqrt(np.sum(means**2, axis=1)), "k", alpha=0.5, linestyle='dashdot', lw=lw_mean)#, label ='run with mean iparams')
-        plt.plot(t, means[:, 0], "r", alpha=0.75,linestyle='dashdot', lw=lw_mean)
-        plt.plot(t, means[:, 1], "g", alpha=0.75,linestyle='dashdot', lw=lw_mean)
-        plt.plot(t, means[:, 2], "b", alpha=0.75,linestyle='dashdot', lw=lw_mean)
+        plt.plot(t, means[:, 0], "r", alpha=0.75, linestyle='dashdot', lw=lw_mean)
+        plt.plot(t, means[:, 1], "g", alpha=0.75, linestyle='dashdot', lw=lw_mean)
+        plt.plot(t, means[:, 2], "b", alpha=0.75, linestyle='dashdot', lw=lw_mean)
         
         
         

@@ -23,13 +23,13 @@ if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 9, 5, 16, tzinfo=datetime.timezone.utc) # 
 
     t_s = datetime.datetime(2022, 9, 5, 19, tzinfo=datetime.timezone.utc) 
-    t_e = datetime.datetime(2022, 9, 6, 5, tzinfo=datetime.timezone.utc)
+    t_e = datetime.datetime(2022, 9, 6, 8, tzinfo=datetime.timezone.utc)
 
     t_fit = [
         datetime.datetime(2022, 9, 5, 20, 30, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 5, 22, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 5, 23, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 6, 1, tzinfo=datetime.timezone.utc)
+        datetime.datetime(2022, 9, 6, 2, 30, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 6, 4, tzinfo=datetime.timezone.utc)
      ]
 
 # Restraining the initial values for the ensemble members leads to more efficient fitting.
@@ -67,32 +67,40 @@ if __name__ == "__main__":
         "iparams": {
            "cme_longitude": {
                "maximum": 180,
-               "minimum": -180
+               "minimum": 0
            },
            "cme_latitude": {
-               "maximum": 50,
-               "minimum": -50
+               "maximum": 60,
+               "minimum": -30
            },
            "cme_inclination": {
-               "maximum": 150,
+               "maximum": 300,
                "minimum": 0
            }, 
            "cme_aspect_ratio": {
-               "maximum": 5,
+               "maximum": 7,
                "minimum": 1
            }, 
+           "cme_diameter_1au": {
+               "maximum": 0.5,
+               "minimum": 0.05
+           },  
            "cme_launch_velocity": {
                "maximum": 2000,
                "minimum": 100
            },
            "cme_launch_radius": {
                "maximum": 14,
-               "minimum": 8
+               "minimum": 5
            },
            "t_factor": {
                "maximum": 250,
                "minimum": -250
            },
+           "background_drag": {
+               "maximum": 4,
+               "minimum": 0.2
+           }, 
             "background_velocity": {
                "maximum": 500,
                "minimum": 50
@@ -101,7 +109,7 @@ if __name__ == "__main__":
     }
     
     
-    output = 'psp05092022_heeq_512_3/'
+    output = 'psp05092022_heeq_512_5/'
     
 
     # Deleting a non-empty folder
