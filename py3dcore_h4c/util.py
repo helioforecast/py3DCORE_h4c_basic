@@ -233,27 +233,27 @@ def cdftopickle(magpath, swapath, sc):
     timep_mat = mdates.date2num(timep)  
     
     if os.path.exists(swapath):
-        solo_ll = np.zeros(np.size(time_int),dtype=[('time',object),('bx', float),('by', float),('bz', float),('bt', float),('r', float),('lat', float),('lon', float),('x', float),('y', float),('z', float),('vx', float),('vy', float),('vz', float),('vt', float),('tp', float),('np', float) ] )
+        ll = np.zeros(np.size(time_int),dtype=[('time',object),('bx', float),('by', float),('bz', float),('bt', float),('r', float),('lat', float),('lon', float),('x', float),('y', float),('z', float),('vx', float),('vy', float),('vz', float),('vt', float),('tp', float),('np', float) ] )
     else:
-        solo_ll = np.zeros(np.size(time_int),dtype=[('time',object),('bx', float),('by', float),('bz', float),('bt', float),('r', float),('lat', float),('lon', float),('x', float),('y', float),('z', float)] )
+        ll = np.zeros(np.size(time_int),dtype=[('time',object),('bx', float),('by', float),('bz', float),('bt', float),('r', float),('lat', float),('lon', float),('x', float),('y', float),('z', float)] )
         
 
-    solo_ll = solo_ll.view(np.recarray)  
+    ll = ll.view(np.recarray)  
 
 
-    solo_ll.time = time_int
-    solo_ll.bx = np.interp(time_int_mat, time1_mat[~np.isnan(br1)], br1[~np.isnan(br1)])
-    solo_ll.by = np.interp(time_int_mat, time1_mat[~np.isnan(bt1)], bt1[~np.isnan(bt1)])
-    solo_ll.bz = np.interp(time_int_mat, time1_mat[~np.isnan(bn1)], bn1[~np.isnan(bn1)])
-    solo_ll.bt = np.sqrt(solo_ll.bx**2 + solo_ll.by**2 + solo_ll.bz**2)
+    ll.time = time_int
+    ll.bx = np.interp(time_int_mat, time1_mat[~np.isnan(br1)], br1[~np.isnan(br1)])
+    ll.by = np.interp(time_int_mat, time1_mat[~np.isnan(bt1)], bt1[~np.isnan(bt1)])
+    ll.bz = np.interp(time_int_mat, time1_mat[~np.isnan(bn1)], bn1[~np.isnan(bn1)])
+    ll.bt = np.sqrt(ll.bx**2 + ll.by**2 + ll.bz**2)
     
     if os.path.exists(swapath):
-        solo_ll.np = np.interp(time_int_mat, timep_mat, den)
-        solo_ll.tp = np.interp(time_int_mat, timep_mat, temp) 
-        solo_ll.vx = np.interp(time_int_mat, timep_mat, vr)
-        solo_ll.vy = np.interp(time_int_mat, timep_mat, vt)
-        solo_ll.vz = np.interp(time_int_mat, timep_mat, vn)
-        solo_ll.vt = np.sqrt(solo_ll.vx**2 + solo_ll.vy**2 + solo_ll.vz**2)
+        ll.np = np.interp(time_int_mat, timep_mat, den)
+        ll.tp = np.interp(time_int_mat, timep_mat, temp) 
+        ll.vx = np.interp(time_int_mat, timep_mat, vr)
+        ll.vy = np.interp(time_int_mat, timep_mat, vt)
+        ll.vz = np.interp(time_int_mat, timep_mat, vn)
+        ll.vt = np.sqrt(ll.vx**2 + ll.vy**2 + ll.vz**2)
 
 
     try:
@@ -265,21 +265,21 @@ def cdftopickle(magpath, swapath, sc):
         
         solo_coords_heeq = solo_coords.transform_to(sunpy.coordinates.HeliographicStonyhurst())
 
-        solo_ll.lon = solo_coords_heeq.lon.value
-        solo_ll.lat = solo_coords_heeq.lat.value
-        solo_ll.r = solo_coords_heeq.radius.to(u.au).value    
+        ll.lon = solo_coords_heeq.lon.value
+        ll.lat = solo_coords_heeq.lat.value
+        ll.r = solo_coords_heeq.radius.to(u.au).value    
 
-        solo_ll = sphere2cart(solo_ll)
-        print(solo_ll.x, solo_ll.y, solo_ll.z)
+        ll = sphere2cart(ll)
+        print(ll.x, ll.y, ll.z)
         
     except:  
         coord = get_horizons_coord(sc, time={'start': time_int[0], 'stop': time_int[-1], 'step': '1m'})  
         heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
         
         #time=heeq.obstime.to_datetime()
-        solo_ll.r = heeq.radius.value
-        solo_ll.lon = heeq.lon.value
-        solo_ll.lat = heeq.lat.value
+        ll.r = heeq.radius.value
+        ll.lon = heeq.lon.value
+        ll.lat = heeq.lat.value
         
         ###solo_coords = get_horizons_coord(sc, time_int)
         ###solo_coords = [get_horizons_coord(sc, i.strftime('%Y-%m-%d %H:%M')) for i in time_int[0:10]]
@@ -292,12 +292,12 @@ def cdftopickle(magpath, swapath, sc):
         #solo_ll.x = psp2.x
         #solo_ll.y = psp2.y
         #solo_ll.z = psp2.z
-        solo_ll = sphere2cart(solo_ll)
+        ll = sphere2cart(ll)
         
-        print(solo_ll.x, solo_ll.y, solo_ll.z)
+        print(ll.x, ll.y, ll.z)
 
     
-    return solo_ll
+    return ll
     
     
 def sphere2cart(ll):
