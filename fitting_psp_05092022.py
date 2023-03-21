@@ -22,11 +22,11 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 9, 5, 16, tzinfo=datetime.timezone.utc) # 
 
-    t_s = datetime.datetime(2022, 9, 5, 20, tzinfo=datetime.timezone.utc) 
+    t_s = datetime.datetime(2022, 9, 5, 19, tzinfo=datetime.timezone.utc) 
     t_e = datetime.datetime(2022, 9, 6, 5, tzinfo=datetime.timezone.utc)
 
     t_fit = [
-        datetime.datetime(2022, 9, 5, 21, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 5, 20, 30, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 5, 22, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 5, 23, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 6, 1, tzinfo=datetime.timezone.utc)
@@ -70,11 +70,11 @@ if __name__ == "__main__":
                "minimum": -180
            },
            "cme_latitude": {
-               "maximum": 90,
-               "minimum": -90
+               "maximum": 50,
+               "minimum": -50
            },
            "cme_inclination": {
-               "maximum": 360,
+               "maximum": 150,
                "minimum": 0
            }, 
            "cme_aspect_ratio": {
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     }
     
     
-    output = 'psp05092022_heeq_512_2/'
+    output = 'psp05092022_heeq_512_3/'
     
 
     # Deleting a non-empty folder

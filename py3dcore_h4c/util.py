@@ -143,12 +143,12 @@ def cdftopickle(magpath, swapath, sc):
     if sc == 'psp':
         fullname = 'Parker Solar Probe'
     
-    timep=np.zeros(0,dtype=[('time',object)])
-    den=np.zeros(0)
-    temp=np.zeros(0)
-    vr=np.zeros(0)
-    vt=np.zeros(0)
-    vn=np.zeros(0)
+    timep = np.zeros(0,dtype=[('time',object)])
+    den = np.zeros(0)
+    temp = np.zeros(0)
+    vr = np.zeros(0)
+    vt = np.zeros(0)
+    vn = np.zeros(0)
         
     if os.path.exists(swapath):
         ll_path = swapath
@@ -161,28 +161,28 @@ def cdftopickle(magpath, swapath, sc):
         for i in np.arange(0,len(llfiles)):
             p1 = cdflib.CDF(llfiles[i])
 
-            den1=p1.varget('N')
-            speed1=p1.varget('V_RTN')
-            temp1=p1.varget('T')
+            den1 = p1.varget('N')
+            speed1 = p1.varget('V_RTN')
+            temp1 = p1.varget('T')
 
-            vr1=speed1[:,0]
-            vt1=speed1[:,1]
-            vn1=speed1[:,2]
+            vr1 = speed1[:, 0]
+            vt1 = speed1[:, 1]
+            vn1 = speed1[:, 2]
 
-            vr=np.append(vr1,vr)
-            vt=np.append(vt1,vt)
-            vn=np.append(vn1,vn)
-
-
-            temp=np.append(temp1,temp)
-            den=np.append(den1,den)
+            vr = np.append(vr1, vr)
+            vt = np.append(vt1, vt)
+            vn = np.append(vn1, vn)
 
 
-            time1=p1.varget('EPOCH')
-            t1=parse_time(cdflib.cdfastropy.convert_to_astropy(time1, format=None)).datetime
-            timep=np.append(timep,t1)
+            temp = np.append(temp1, temp)
+            den = np.append(den1, den)
 
-            temp=temp*(1.602176634*1e-19)/(1.38064852*1e-23) # from ev to K 
+
+            time1 = p1.varget('EPOCH')
+            t1 = parse_time(cdflib.cdfastropy.convert_to_astropy(time1, format=None)).datetime
+            timep = np.append(timep, t1)
+
+            temp = temp*(1.602176634*1e-19) / (1.38064852*1e-23) # from ev to K 
 
     ll_path = magpath
 
@@ -190,69 +190,70 @@ def cdftopickle(magpath, swapath, sc):
     files.sort()
     llfiles = [os.path.join(ll_path, f) for f in files if f.endswith('.cdf')]
     
-    br1=np.zeros(0)
-    bt1=np.zeros(0)
-    bn1=np.zeros(0)
-    time1=np.zeros(0,dtype=[('time',object)])
+    br1 = np.zeros(0)
+    bt1 = np.zeros(0)
+    bn1 = np.zeros(0)
+    time1 = np.zeros(0,dtype=[('time',object)])
     
     for i in np.arange(0,len(llfiles)):
         m1 = cdflib.CDF(llfiles[i])
         
         try:
-            b=m1.varget('B_RTN')
+            b = m1.varget('B_RTN')
         except:
-            b=m1.varget('psp_fld_l2_mag_RTN_1min')
+            b = m1.varget('psp_fld_l2_mag_RTN_1min')
             
-        br=b[:,0]
-        bt=b[:,1]
-        bn=b[:,2]
+        br = b[:, 0]
+        bt = b[:, 1]
+        bn = b[:, 2]
 
-        br1=np.append(br1,br)
-        bt1=np.append(bt1,bt)
-        bn1=np.append(bn1,bn)
+        br1 = np.append(br1, br)
+        bt1 = np.append(bt1, bt)
+        bn1 = np.append(bn1, bn)
 
         try:
-            time=m1.varget('EPOCH')
+            time = m1.varget('EPOCH')
         except:
-            time=m1.varget('epoch_mag_RTN_1min')
+            time = m1.varget('epoch_mag_RTN_1min')
             
-        t1=parse_time(cdflib.cdfastropy.convert_to_astropy(time, format=None)).datetime
-        time1=np.append(time1,t1)
+        t1 = parse_time(cdflib.cdfastropy.convert_to_astropy(time, format=None)).datetime
+        time1 = np.append(time1,t1)
         
     starttime = time1[0].replace(hour = 0, minute = 0, second=0, microsecond=0)
     endtime = time1[-1].replace(hour = 0, minute = 0, second=0, microsecond=0)
     
     time_int = []
     while starttime < endtime:
-            time_int.append(starttime)
-            starttime += timedelta(minutes=1)
+        time_int.append(starttime)
+        starttime += timedelta(minutes=1)
 
 
-    time_int_mat=mdates.date2num(time_int)
-    time1_mat=mdates.date2num(time1)
-    timep_mat=mdates.date2num(timep)  
+    time_int_mat = mdates.date2num(time_int)
+    time1_mat = mdates.date2num(time1)
+    timep_mat = mdates.date2num(timep)  
+    
     if os.path.exists(swapath):
-        solo_ll=np.zeros(np.size(time_int),dtype=[('time',object),('bx', float),('by', float),('bz', float),('bt', float),('r', float),('lat', float),('lon', float),('x', float),('y', float),('z', float),('vx', float),('vy', float),('vz', float),('vt', float),('tp', float),('np', float) ] )
+        solo_ll = np.zeros(np.size(time_int),dtype=[('time',object),('bx', float),('by', float),('bz', float),('bt', float),('r', float),('lat', float),('lon', float),('x', float),('y', float),('z', float),('vx', float),('vy', float),('vz', float),('vt', float),('tp', float),('np', float) ] )
     else:
-        solo_ll=np.zeros(np.size(time_int),dtype=[('time',object),('bx', float),('by', float),('bz', float),('bt', float),('r', float),('lat', float),('lon', float),('x', float),('y', float),('z', float)] )
+        solo_ll = np.zeros(np.size(time_int),dtype=[('time',object),('bx', float),('by', float),('bz', float),('bt', float),('r', float),('lat', float),('lon', float),('x', float),('y', float),('z', float)] )
         
 
     solo_ll = solo_ll.view(np.recarray)  
 
 
-    solo_ll.time=time_int
-    solo_ll.bx=np.interp(time_int_mat, time1_mat[~np.isnan(br1)],br1[~np.isnan(br1)])
-    solo_ll.by=np.interp(time_int_mat, time1_mat[~np.isnan(br1)],bt1[~np.isnan(bt1)])
-    solo_ll.bz=np.interp(time_int_mat, time1_mat[~np.isnan(br1)],bn1[~np.isnan(bn1)])
-    solo_ll.bt=np.sqrt(solo_ll.bx**2+solo_ll.by**2+solo_ll.bz**2)
+    solo_ll.time = time_int
+    solo_ll.bx = np.interp(time_int_mat, time1_mat[~np.isnan(br1)], br1[~np.isnan(br1)])
+    solo_ll.by = np.interp(time_int_mat, time1_mat[~np.isnan(bt1)], bt1[~np.isnan(bt1)])
+    solo_ll.bz = np.interp(time_int_mat, time1_mat[~np.isnan(bn1)], bn1[~np.isnan(bn1)])
+    solo_ll.bt = np.sqrt(solo_ll.bx**2 + solo_ll.by**2 + solo_ll.bz**2)
     
     if os.path.exists(swapath):
-        solo_ll.np=np.interp(time_int_mat, timep_mat,den)
-        solo_ll.tp=np.interp(time_int_mat, timep_mat,temp) 
-        solo_ll.vx=np.interp(time_int_mat, timep_mat,vr)
-        solo_ll.vy=np.interp(time_int_mat, timep_mat,vt)
-        solo_ll.vz=np.interp(time_int_mat, timep_mat,vn)
-        solo_ll.vt=np.sqrt(solo_ll.vx**2+solo_ll.vy**2+solo_ll.vz**2)
+        solo_ll.np = np.interp(time_int_mat, timep_mat, den)
+        solo_ll.tp = np.interp(time_int_mat, timep_mat, temp) 
+        solo_ll.vx = np.interp(time_int_mat, timep_mat, vr)
+        solo_ll.vy = np.interp(time_int_mat, timep_mat, vt)
+        solo_ll.vz = np.interp(time_int_mat, timep_mat, vn)
+        solo_ll.vt = np.sqrt(solo_ll.vx**2 + solo_ll.vy**2 + solo_ll.vz**2)
 
 
     try:
@@ -264,9 +265,9 @@ def cdftopickle(magpath, swapath, sc):
         
         solo_coords_heeq = solo_coords.transform_to(sunpy.coordinates.HeliographicStonyhurst())
 
-        solo_ll.lon=solo_coords_heeq.lon.value
-        solo_ll.lat=solo_coords_heeq.lat.value
-        solo_ll.r=solo_coords_heeq.radius.to(u.au).value    
+        solo_ll.lon = solo_coords_heeq.lon.value
+        solo_ll.lat = solo_coords_heeq.lat.value
+        solo_ll.r = solo_coords_heeq.radius.to(u.au).value    
 
         solo_ll = sphere2cart(solo_ll)
         print(solo_ll.x, solo_ll.y, solo_ll.z)
@@ -276,9 +277,9 @@ def cdftopickle(magpath, swapath, sc):
         heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
         
         #time=heeq.obstime.to_datetime()
-        solo_ll.r=heeq.radius.value
-        solo_ll.lon=heeq.lon.value
-        solo_ll.lat=heeq.lat.value
+        solo_ll.r = heeq.radius.value
+        solo_ll.lon = heeq.lon.value
+        solo_ll.lat = heeq.lat.value
         
         ###solo_coords = get_horizons_coord(sc, time_int)
         ###solo_coords = [get_horizons_coord(sc, i.strftime('%Y-%m-%d %H:%M')) for i in time_int[0:10]]
