@@ -40,7 +40,7 @@ def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_fram
     ensemble_data = []
     
 
-    for (observer, _, _, _, _) in observers:
+    for (observer, _, _, _, _,_) in observers:
         ftobj = BaseFitter(path) # load Fitter from path
         
         if custom_data == False:
@@ -168,7 +168,7 @@ class BaseFitter(object):
         else:
             self.locked = False
 
-    def add_observer(self, observer: str, dt: Union[str, datetime.datetime, Sequence[str], Sequence[datetime.datetime]], dt_s: Union[str, datetime.datetime], dt_e: Union[str, datetime.datetime], dt_shift: datetime.timedelta = None) -> None:        
+    def add_observer(self, observer: str, dt: Union[str, datetime.datetime, Sequence[str], Sequence[datetime.datetime]], dt_s: Union[str, datetime.datetime], dt_e: Union[str, datetime.datetime], dt_shift: datetime.timedelta = None, custom_data = None) -> None:        
         
         """
         Appends an observer.
@@ -183,8 +183,7 @@ class BaseFitter(object):
         Returns:
             None
         """
-        
-        self.observers.append([observer, sanitize_dt(dt), sanitize_dt(dt_s), sanitize_dt(dt_e), dt_shift]) # append observer with sanitized datetime (HelioSat sanitize deals with different timezones)
+        self.observers.append([observer, sanitize_dt(dt), sanitize_dt(dt_s), sanitize_dt(dt_e), dt_shift, custom_data]) # append observer with sanitized datetime (HelioSat sanitize deals with different timezones)
 
     def initialize(self, dt_0: Union[str, datetime.datetime], model: Type[SimulationBlackBox], model_kwargs: dict = {}) -> None:
         
@@ -356,7 +355,7 @@ class FittingData(object):
         if noise_model == "psd":
         # get data for each observer
             for o in range(self.length):
-                observer, dt, dt_s, dt_e, _ = self.observers[o]
+                observer, dt, dt_s, dt_e, _, _ = self.observers[o]
 
                 observer_obj = getattr(heliosat, observer)()
 
@@ -406,7 +405,7 @@ class FittingData(object):
             
             # The values of the observer are unpacked
             
-            observer, dt, dt_s, dt_e, dt_shift = self.observers[o]
+            observer, dt, dt_s, dt_e, dt_shift, _ = self.observers[o]
             
             # The reference points are corrected by time_offset
 
@@ -591,10 +590,9 @@ class CustomData(FittingData):
     reference_frame: str
     sampling_freq: int
 
-    def __init__(self, observers: list, reference_frame: str, data_path: str) -> None:
+    def __init__(self, observers: list, reference_frame: str) -> None:
         
-        FittingData.__init__(self, observers, reference_frame)        
-        self.data_path = data_path
+        FittingData.__init__(self, observers, reference_frame)
     
     def generate_data(self, time_offset: Union[int, Sequence], **kwargs: Any) -> None:
         
@@ -627,7 +625,10 @@ class CustomData(FittingData):
             
             # The values of the observer are unpacked
             
-            observer, dt, dt_s, dt_e, dt_shift = self.observers[o]
+            
+            observer, dt, dt_s, dt_e, dt_shift, self.data_path = self.observers[o]
+            
+            logger.info("Using custom datafile: %s", self.data_path)
             
             # The reference points are corrected by time_offset
 
@@ -697,7 +698,7 @@ class CustomData(FittingData):
         if noise_model == "psd":
         # get data for each observer
             for o in range(self.length):
-                observer, dt, dt_s, dt_e, _ = self.observers[o]
+                observer, dt, dt_s, dt_e, _, self.data_path = self.observers[o]
 
                  # The observer object is created
                         

@@ -20,12 +20,22 @@ logging.getLogger("heliosat.spacecraft").setLevel("WARNING")
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    t_launch = datetime.datetime(2022, 9, 5, 18, tzinfo=datetime.timezone.utc) # launch time assumed at CME impact at PSP at 14.72 Rs
+    t_launch = datetime.datetime(2022, 9, 5, 16, tzinfo=datetime.timezone.utc) # 
 
-    t_s = datetime.datetime(2022, 9, 7, 8, tzinfo=datetime.timezone.utc) 
-    t_e = datetime.datetime(2022, 9, 8, 3, tzinfo=datetime.timezone.utc)
+    t_s_p = datetime.datetime(2022, 9, 5, 19, tzinfo=datetime.timezone.utc) 
+    t_e_p = datetime.datetime(2022, 9, 6, 8, tzinfo=datetime.timezone.utc)
 
-    t_fit = [
+    t_fit_p = [
+        datetime.datetime(2022, 9, 5, 20, 30, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 5, 22, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 6, 2, 30, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 6, 4, tzinfo=datetime.timezone.utc)
+     ]
+    
+    t_s_s = datetime.datetime(2022, 9, 7, 8, tzinfo=datetime.timezone.utc) 
+    t_e_s = datetime.datetime(2022, 9, 8, 3, tzinfo=datetime.timezone.utc)
+
+    t_fit_s = [
         datetime.datetime(2022, 9, 7, 9, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 7, 15, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 7, 20, tzinfo=datetime.timezone.utc),
@@ -43,7 +53,7 @@ if __name__ == "__main__":
 #         3: inc          inclination
 # 
 #         4: dia          cross section diameter at 1 AU
-#         5: delta        cross section aspect ratio
+#         5: delta        cross section aspect rati
 # 
 #         6: r0           initial cme radius
 #         7: v0           initial cme velocity
@@ -66,42 +76,50 @@ if __name__ == "__main__":
         "ensemble_size": int(2**16), #2**17
         "iparams": {
            "cme_longitude": {
-               "maximum": 200,
-               "minimum": 100
+               "maximum": 180,
+               "minimum": 0
            },
            "cme_latitude": {
-               "maximum": 10,
-               "minimum": -10
+               "maximum": 60,
+               "minimum": -30
            },
            "cme_inclination": {
-               "maximum": 30,
+               "maximum": 300,
                "minimum": 0
            }, 
            "cme_aspect_ratio": {
-               "maximum": 5,
+               "maximum": 7,
                "minimum": 1
            }, 
+           "cme_diameter_1au": {
+               "maximum": 0.5,
+               "minimum": 0.05
+           },  
            "cme_launch_velocity": {
                "maximum": 2000,
-               "minimum": 1000
+               "minimum": 100
            },
            "cme_launch_radius": {
-               "maximum": 16,
-               "minimum": 14
+               "maximum": 14,
+               "minimum": 5
            },
            "t_factor": {
                "maximum": 250,
-               "minimum": 50
+               "minimum": -250
            },
+           "background_drag": {
+               "maximum": 4,
+               "minimum": 0.2
+           }, 
             "background_velocity": {
-               "maximum": 700,
-               "minimum": 400
+               "maximum": 500,
+               "minimum": 50
            } 
         }
     }
     
     
-    output = 'solo06092022_heeq_512_restrP_test/'
+    output = 'psp05092022_heeq_512_5/'
     
 
     # Deleting a non-empty folder
@@ -114,6 +132,7 @@ if __name__ == "__main__":
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
-    fitter.add_observer("SOLO", t_fit, t_s, t_e)
+    fitter.add_observer("PSP", t_fit_p, t_s_p, t_e_p, custom_data='psp_2022sep.p')
+    fitter.add_observer("SOLO", t_fit_s, t_s_s, t_e_s, custom_data='solo_2022sep.p')
 
-    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=2, workers=2, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=False, )
+    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=2, workers=2, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=False, custom_data = True)

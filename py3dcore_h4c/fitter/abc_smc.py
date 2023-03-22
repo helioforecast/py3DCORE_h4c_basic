@@ -123,8 +123,7 @@ class ABC_SMC(BaseFitter):
             data_obj = FittingData(self.observers, reference_frame) 
             logger.info("Using HelioSat to retrieve data")
         else:
-            data_obj = CustomData(self.observers, reference_frame, custom_data)
-            logger.info("Using custom datafile: %s", custom_data)
+            data_obj = CustomData(self.observers, reference_frame)
         data_obj.generate_noise(kwargs.get("noise_model", "psd"), kwargs.get("sampling_freq", 300), **data_kwargs) # noise is generated for the Fitting Data Object, function also comes from the module fitter.base.py 
 
         kill_flag = False
