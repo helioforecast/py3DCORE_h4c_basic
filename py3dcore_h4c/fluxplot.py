@@ -515,7 +515,7 @@ def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, traj =
     fig = plt.figure(figsize=(15,12),dpi=200)
     ax = fig.add_subplot(111, projection='3d')
     
-    plot_configure(ax, view_azim=0, view_elev=90, view_radius=0.1)
+    plot_configure(ax, view_azim=0, view_elev=45, view_radius=0.2)
     
     model_obj = returnmodel(filepath)
     
