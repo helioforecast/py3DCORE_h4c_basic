@@ -22,14 +22,14 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 9, 5, 16, tzinfo=datetime.timezone.utc) # 
 
-    t_s_p = datetime.datetime(2022, 9, 5, 19, tzinfo=datetime.timezone.utc) 
-    t_e_p = datetime.datetime(2022, 9, 6, 8, tzinfo=datetime.timezone.utc)
+    t_s_p = datetime.datetime(2022, 9, 5, 18, tzinfo=datetime.timezone.utc) 
+    t_e_p = datetime.datetime(2022, 9, 6, 6, tzinfo=datetime.timezone.utc)
 
     t_fit_p = [
-        datetime.datetime(2022, 9, 5, 20, 30, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 5, 22, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 6, 2, 30, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 6, 4, tzinfo=datetime.timezone.utc)
+        datetime.datetime(2022, 9, 5, 19, 5, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 5, 20, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 6, 0, 15, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 6, 2, tzinfo=datetime.timezone.utc)
      ]
     
     t_s_s = datetime.datetime(2022, 9, 7, 8, tzinfo=datetime.timezone.utc) 
@@ -76,15 +76,15 @@ if __name__ == "__main__":
         "ensemble_size": int(2**16), #2**17
         "iparams": {
            "cme_longitude": {
-               "maximum": 180,
-               "minimum": 0
+               "maximum": 200,
+               "minimum": 100
            },
            "cme_latitude": {
-               "maximum": 60,
-               "minimum": -30
+               "maximum": 50,
+               "minimum": -50
            },
            "cme_inclination": {
-               "maximum": 300,
+               "maximum": 180,
                "minimum": 0
            }, 
            "cme_aspect_ratio": {
@@ -92,7 +92,7 @@ if __name__ == "__main__":
                "minimum": 1
            }, 
            "cme_diameter_1au": {
-               "maximum": 0.5,
+               "maximum": 0.7,
                "minimum": 0.05
            },  
            "cme_launch_velocity": {
@@ -100,7 +100,7 @@ if __name__ == "__main__":
                "minimum": 100
            },
            "cme_launch_radius": {
-               "maximum": 14,
+               "maximum": 16,
                "minimum": 5
            },
            "t_factor": {
@@ -112,14 +112,14 @@ if __name__ == "__main__":
                "minimum": 0.2
            }, 
             "background_velocity": {
-               "maximum": 500,
+               "maximum": 900,
                "minimum": 50
            } 
         }
     }
     
     
-    output = 'psp05092022_heeq_512_5/'
+    output = 'sep2022_multi_1024_1/'
     
 
     # Deleting a non-empty folder
@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
-    fitter.add_observer("PSP", t_fit_p, t_s_p, t_e_p, custom_data='psp_2022sep.p')
+ #   fitter.add_observer("PSP", t_fit_p, t_s_p, t_e_p, custom_data='psp_2022sep.p')
     fitter.add_observer("SOLO", t_fit_s, t_s_s, t_e_s, custom_data='solo_2022sep.p')
 
-    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=2, workers=2, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=False, custom_data = True)
+    fitter.run(ensemble_size=1024, reference_frame="HEEQ", jobs=128, workers=128, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=True, custom_data=True)

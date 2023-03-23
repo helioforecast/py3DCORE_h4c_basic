@@ -75,14 +75,14 @@ class ABC_SMC(BaseFitter):
         self.hist_eps = [] # keeps track of epsilon values
         self.hist_time = [] # keeps track of time
     
-    def run(self, epsgoal=0.3, iter_min=10, iter_max=15, ensemble_size=512, reference_frame="HEEQ", **kwargs: Any) -> None:
+    def run(self, epsgoal=0.25, iter_min=10, iter_max=15, ensemble_size=512, reference_frame="HEEQ", **kwargs: Any) -> None:
         """
         Runs the fitting process.
         Sets the following properties for self:
             hist_eps_dim             Dimension of each eps (Number of observers)
     
         Arguments:
-            epsgoal          0.3     Epsilon to be reached during optimization
+            epsgoal          0.25     Epsilon to be reached during optimization
             iter_min         10      Minimum iterations before epsgoal is checked
             iter_max         15      Maximum iterations until fitting is interrupted
             ensemble_size    512     Number of particles to be accepted 
