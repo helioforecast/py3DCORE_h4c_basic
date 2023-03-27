@@ -1,88 +1,86 @@
 import sys
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QComboBox
-from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 
+import sys
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
-class MainWindow(QWidget):
+class MyWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        # set up the main window layout
-        main_layout = QHBoxLayout()
-        self.setLayout(main_layout)
+        # Create a figure and a canvas
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)
 
-        # create the sidebar layout
-        sidebar_layout = QVBoxLayout()
-        sidebar_layout.setAlignment(Qt.AlignTop)
+        # Create a horizontal slider and a label
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setRange(0, 100)
+        self.slider.setValue(50)
+        self.slider.setTickPosition(QSlider.TicksBelow)
+        self.slider.setTickInterval(10)
+        self.sliderLabel = QLabel(str(self.slider.value()))
 
-        # create some checkboxes for the sidebar
-        self.checkboxes = []
-        for i in range(3):
-            checkbox = QCheckBox("Checkbox {}".format(i+1))
-            checkbox.stateChanged.connect(self.update_canvas)
-            self.checkboxes.append(checkbox)
-            sidebar_layout.addWidget(checkbox)
+        # Create five vertical sliders and labels
+        self.sliders = []
+        self.sliderLabels = []
+        for i in range(5):
+            slider = QSlider(Qt.Vertical)
+            slider.setRange(0, 100)
+            slider.setValue(50)
+            slider.setTickPosition(QSlider.TicksBothSides)
+            slider.setTickInterval(10)
+            label = QLabel(str(slider.value()))
+            self.sliders.append(slider)
+            self.sliderLabels.append(label)
 
-        # add a combobox for setting the font size
-        font_size_label = QLabel("Label Font Size:")
-        self.font_size_combobox = QComboBox()
-        for i in range(6, 16):
-            self.font_size_combobox.addItem(str(i))
-        self.font_size_combobox.currentIndexChanged.connect(self.update_canvas)
-        sidebar_layout.addWidget(font_size_label)
-        sidebar_layout.addWidget(self.font_size_combobox)
+        # Connect sliders to update functions
+        self.slider.valueChanged.connect(self.updateSliderLabel)
+        for slider in self.sliders:
+            slider.valueChanged.connect(self.updatePlot)
 
-        # add the sidebar to the main layout
-        main_layout.addLayout(sidebar_layout)
+        # Create a layout for the sliders and labels
+        sliderLayout = QGridLayout()
+        sliderLayout.addWidget(self.sliderLabel, 0, 0, 1, 5)
+        for i, (slider, label) in enumerate(zip(self.sliders, self.sliderLabels)):
+            sliderLayout.addWidget(label, 1, i)
+            sliderLayout.addWidget(slider, 2, i)
 
-        # create the main canvas
-        self.fig = Figure(figsize=(5, 4), dpi=100)
-        self.canvas = FigureCanvas(self.fig)
-        main_layout.addWidget(self.canvas)
+        # Create a layout for the canvas and sliders
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        layout.addWidget(self.slider)
+        layout.addLayout(sliderLayout)
 
-        # create the initial subfigure to display
-        self.ax1 = self.fig.add_subplot(111)
-        self.ax1.plot([1, 2, 3], [1, 2, 3])
-        self.ax1.set_xlabel("X Label", fontsize=12)
-        self.ax1.set_ylabel("Y Label", fontsize=12)
+        # Set the main layout of the window
+        self.setLayout(layout)
 
-        # set the main window properties
-        self.setGeometry(100, 100, 800, 600)
-        self.setWindowTitle('Matplotlib Subfigures')
+    def updateSliderLabel(self, value):
+        self.sliderLabel.setText(str(value))
+        self.updatePlot()
 
-        # show the main window
-        self.show()
-
-    def update_canvas(self):
-        # clear the existing subfigures
-        self.fig.clf()
-
-        # get the selected font size from the combobox
-        font_size = int(self.font_size_combobox.currentText())
-
-        # create a new subfigure for each checkbox that is checked
-        subplots = []
-        for i, checkbox in enumerate(self.checkboxes):
-            if checkbox.isChecked():
-                subplots.append(self.fig.add_subplot(len(self.checkboxes), 1, i+1))
-                subplots[-1].plot([1, 2, 3], [1, 2, 3])
-                subplots[-1].set_xlabel("X Label", fontsize=font_size)
-                subplots[-1].set_ylabel("Y Label", fontsize=font_size)
-
-        # update the canvas size based on the number of subfigures
-        num_subplots = len(subplots)
-        canvas_width = max(num_subplots * 100, 500)
-        canvas_height = 400
-        self.canvas.setMinimumSize(canvas_width, canvas_height)
-
-        # redraw the canvas
+    def updatePlot(self):
+        # Update the plot based on the slider values
+        x = range(100)
+        y = [self.slider.value() * (i/100.0) ** 2 + sum(slider.value() for slider in self.sliders) for i in x]
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
+        ax.plot(x, y)
         self.canvas.draw()
 
-
 if __name__ == '__main__':
+    # Create the application and window
     app = QApplication(sys.argv)
-    main_window = MainWindow()
+    window = MyWindow()
+    window.setWindowTitle('My Application')
+    window.show()
+
+    # Run the event loop
     sys.exit(app.exec_())

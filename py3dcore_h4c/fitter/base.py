@@ -40,7 +40,7 @@ def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_fram
     ensemble_data = []
     
 
-    for (observer, _, _, _, _) in observers:
+    for (observer, _, _, _, _,_) in observers:
         ftobj = BaseFitter(path) # load Fitter from path
         
         if custom_data == False:
@@ -106,13 +106,13 @@ def get_ensemble_mean(path: str, dt: Sequence[datetime.datetime], reference_fram
     ensemble_data = []
     
 
-    for (observer, _, _, _, _) in observers:
+    for (observer, _, _, _, _, data_path) in observers:
         ftobj = BaseFitter(path) # load Fitter from path
         
         if custom_data == False:
             observer_obj = getattr(heliosat, observer)() # get observer obj
         else:
-            observer_obj = custom_observer(custom_data)
+            observer_obj = custom_observer(data_path)
             
             
             

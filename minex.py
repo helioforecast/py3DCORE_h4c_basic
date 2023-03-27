@@ -51,63 +51,18 @@ units = ['°', '°', '°', 'AU', '', 'r_{s}','km/s', '', '', 'km/s']
 
 variables = ['lon', 'lat', 'inc', 'd_{1AU}', '\u03B4', 'r_{0}', 'v_{0}', 'n_{a}', '\u03B3', 'v_{sw}']
 
-mins = [0, -90, 0, 0.05]
+mins = [0, -90, 0, 0.05, 1]
 
-maxs = [360, 90, 360, 0.35]
+maxs = [360, 90, 360, 0.35, 6]
 
-inits = [0, 0, 0, 0.2]
+inits = [0, 0, 0, 0.2, 3]
 
-resolutions = [0.1, 0.1, 0.1, 0.01]
-
-elf.cme_lon = SliderandLabel('CME Longitude', 'lon', '°', 0, 360, 0)
-        self.cme_lat = SliderandLabel('CME Latitude', 'lat', '°', -90, 90, 0)
-    
+resolutions = [0.1, 0.1, 0.1, 0.01, 1]
 
 # disable sunpy warnings
 log.setLevel('ERROR')
 
 #################################################################################
-
-class SliderandLabel(QtWidgets.QWidget):
-    """
-    Widget representing a slider with label and textbox
-    """
-    
-    def __init__(self, label, variable, unit, min, max, init, resolution=0.01):
-        super(SliderandLabel,self).__init__()
-        self.resolution = resolution
-        self.label = label
-        self.variable = variable
-        self.unit = unit
-        
-        self.slider = QSlider(Qt.Horizontal)
-        self.slider.setMinimum(int(min/resolution))
-        self.slider.setMaximum(int(max / resolution))
-        self.slider.setValue(int(init / resolution))
-        self.slider.valueChanged.connect(self.handleSliderValueChange)
-        
-        self.values = QLabel("{}: {} {}".format(self.variable, init, self.unit) )
-        
-        self.label = QtWidgets.QLabel()
-        self.label.setText(label)
-        
-        vlayout = QtWidgets.QVBoxLayout(self)
-        layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.label)
-        layout.addStretch(1)
-        layout.addWidget(self.values)
-        vlayout.addLayout(layout)
-        vlayout.addWidget(self.slider)
-
-        self.valueChanged = self.slider.valueChanged
-
-    @property
-    def val(self):
-        return self.slider.value()
-    
-    @QtCore.pyqtSlot(int)
-    def handleSliderValueChange(self, value):
-        self.values.setText = QLabel("{}: {} {}".format(self.variable, self.slider.value() * self.resolution, self.unit) )
 
 def running_difference(a, b):
     return Map(b.data * 1.0 - a.data * 1.0, b.meta)
@@ -352,8 +307,8 @@ class py3dcoreGUI(QtWidgets.QWidget): #.QMainWindow
         self.cme_lon = SliderandLabel('CME Longitude', 'lon', '°', 0, 360, 0)
         self.cme_lat = SliderandLabel('CME Latitude', 'lat', '°', -90, 90, 0)
         
-        sliders = self.cme_lon, self.cme_lat
-        for slider in sliders:
+        varsliders = self.cme_lon, self.cme_lat
+        for slider in varsliders:
             rightbar_layout.addWidget(slider)
             slider.valueChanged.connect(self.plot_mesh)
 
