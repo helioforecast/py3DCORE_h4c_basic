@@ -300,9 +300,23 @@ class py3dcoreGUI(QtWidgets.QWidget): #.QMainWindow
         dtlayout.addWidget(self.dtlabelupdating)
         rightbar_layout.addLayout(dtlayout)
         
-        # cme longitude 
+        # parameters
         
-        rightbar_layout.addWidget(emptylabel)
+        self.paramlabels = []
+        self.paramsliders = []
+        
+        for i in range(10):
+            rightbar_layout.addWidget(emptylabel)
+            hlayout = QHBoxLayout()
+            label = QLabel(params[i])
+            hlayout.addWidget(label)
+            hlayout.addStretch(1)
+            updatelabel = QLabel('{}: {} {}'.format(variables[i], inits[i], units[i]))
+            self.paramlabels.append()
+            rightbar_l
+            
+        
+        
         
         self.cme_lon = SliderandLabel('CME Longitude', 'lon', '°', 0, 360, 0)
         self.cme_lat = SliderandLabel('CME Latitude', 'lat', '°', -90, 90, 0)
