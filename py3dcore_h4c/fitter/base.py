@@ -40,7 +40,7 @@ def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_fram
     ensemble_data = []
     
 
-    for (observer, _, _, _, _,_) in observers:
+    for (observer, _, _, _, _) in observers:
         ftobj = BaseFitter(path) # load Fitter from path
         
         if custom_data == False:

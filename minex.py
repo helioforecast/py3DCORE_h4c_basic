@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QLabel, QComboBox, QSlider, QHBoxLayout, QVBoxLayout, QCheckBox
+from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QTime, QDateTime, QDate, QSize
 from PyQt5.QtGui import QFont
 
@@ -44,10 +45,69 @@ instruments = ['SECCHI','SECCHI','LASCO']
 dets = [['COR2', 'COR1'],['COR2', 'COR1'],['C2', 'C3']]
 spatial_units = [None, None]
 
+params = ['CME Longitude', 'CME Latitude', 'CME Inclination', 'CME Diameter 1 AU', 'CME Aspect Ratio', 'CME Launch Radius', 'CME Launch Velocity', 'CME Expansion Rate', 'Background Drag', 'Background Velocity']
+
+units = ['°', '°', '°', 'AU', '', 'r_{s}','km/s', '', '', 'km/s']
+
+variables = ['lon', 'lat', 'inc', 'd_{1AU}', '\u03B4', 'r_{0}', 'v_{0}', 'n_{a}', '\u03B3', 'v_{sw}']
+
+mins = [0, -90, 0, 0.05]
+
+maxs = [360, 90, 360, 0.35]
+
+inits = [0, 0, 0, 0.2]
+
+resolutions = [0.1, 0.1, 0.1, 0.01]
+
+elf.cme_lon = SliderandLabel('CME Longitude', 'lon', '°', 0, 360, 0)
+        self.cme_lat = SliderandLabel('CME Latitude', 'lat', '°', -90, 90, 0)
+    
+
 # disable sunpy warnings
 log.setLevel('ERROR')
 
 #################################################################################
+
+class SliderandLabel(QtWidgets.QWidget):
+    """
+    Widget representing a slider with label and textbox
+    """
+    
+    def __init__(self, label, variable, unit, min, max, init, resolution=0.01):
+        super(SliderandLabel,self).__init__()
+        self.resolution = resolution
+        self.label = label
+        self.variable = variable
+        self.unit = unit
+        
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setMinimum(int(min/resolution))
+        self.slider.setMaximum(int(max / resolution))
+        self.slider.setValue(int(init / resolution))
+        self.slider.valueChanged.connect(self.handleSliderValueChange)
+        
+        self.values = QLabel("{}: {} {}".format(self.variable, init, self.unit) )
+        
+        self.label = QtWidgets.QLabel()
+        self.label.setText(label)
+        
+        vlayout = QtWidgets.QVBoxLayout(self)
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(self.label)
+        layout.addStretch(1)
+        layout.addWidget(self.values)
+        vlayout.addLayout(layout)
+        vlayout.addWidget(self.slider)
+
+        self.valueChanged = self.slider.valueChanged
+
+    @property
+    def val(self):
+        return self.slider.value()
+    
+    @QtCore.pyqtSlot(int)
+    def handleSliderValueChange(self, value):
+        self.values.setText = QLabel("{}: {} {}".format(self.variable, self.slider.value() * self.resolution, self.unit) )
 
 def running_difference(a, b):
     return Map(b.data * 1.0 - a.data * 1.0, b.meta)
@@ -253,7 +313,7 @@ class py3dcoreGUI(QtWidgets.QWidget): #.QMainWindow
         self.ax2.title.set_size(12+2)
         
         vlayout_dt = QHBoxLayout()
-        self.dtslider = QSlider(Qt.Horizontal)
+        self.dtslider = QSlider(Qt.Horizontal,self)
         self.dtslider.setRange(0, 1000)
         self.dtslider.setValue(0)
         self.dtslider.setTickInterval(10)
@@ -287,24 +347,32 @@ class py3dcoreGUI(QtWidgets.QWidget): #.QMainWindow
         
         # cme longitude 
         
-        sidebar_layout.addWidget(emptylabel)
+        rightbar_layout.addWidget(emptylabel)
+        
+        self.cme_lon = SliderandLabel('CME Longitude', 'lon', '°', 0, 360, 0)
+        self.cme_lat = SliderandLabel('CME Latitude', 'lat', '°', -90, 90, 0)
+        
+        sliders = self.cme_lon, self.cme_lat
+        for slider in sliders:
+            rightbar_layout.addWidget(slider)
+            slider.valueChanged.connect(self.plot_mesh)
 
-        lonlayout = QHBoxLayout()
+        #lonlayout = QHBoxLayout()
         
-        lonlabel = QLabel("CME Longitude:                     ")
-        lonlayout.addWidget(lonlabel)
-        lonlayout.addStretch(1)
+        #lonlabel = QLabel("CME Longitude:                     ")
+        #lonlayout.addWidget(lonlabel)
+        #lonlayout.addStretch(1)
         
-        self.lonlabelupdating = QLabel("lon: {} °".format(0) )
-        lonlayout.addWidget(self.lonlabelupdating)
-        rightbar_layout.addLayout(lonlayout)
+        #self.lonlabelupdating = QLabel("lon: {} °".format(0) )
+        #lonlayout.addWidget(self.lonlabelupdating)
+        #rightbar_layout.addLayout(lonlayout)
         
-        self.lonslider = QSlider(Qt.Horizontal)
-        self.lonslider.setRange(-90, 90)
-        self.lonslider.setValue(0)
-        self.lonvalue = 0
-        rightbar_layout.addWidget(self.lonslider)
-        self.lonslider.valueChanged.connect(self.lon_changed)
+        #self.lonslider = QSlider(Qt.Horizontal, self)
+        #self.lonslider.setRange(-90, 90)
+        #self.lonslider.setValue(0)
+        #self.lonvalue = 0
+        #rightbar_layout.addWidget(self.lonslider)
+        #self.lonslider.valueChanged.connect(self.lon_changed)
         
         
 
@@ -378,19 +446,17 @@ class py3dcoreGUI(QtWidgets.QWidget): #.QMainWindow
         runndiff = False
         
     def dt_changed(self, value):
-        self.dt_val.setText("\u0394 t: {} h".format(self.dtslider.value()/10))
+        self.dt_val.setText("\u0394 t: {} h".format(value/10))
         
         selected_date = self.calendar.selectedDate().toPyDate()
         selected_time = QTime.fromString(self.time_combobox.currentText(), "h:mm AP").toPyTime()
         plotdate = dt.datetime.combine(selected_date, selected_time)
         launchtime = plotdate - datetime.timedelta(hours = value/10)
         self.dtlabelupdating.setText(launchtime.strftime('%Y-%m-%d %H:%M:00'))
-        self.dtvalue = value
         self.plot_mesh()
         
     def lon_changed(self, value):
         self.lonlabelupdating.setText("lon: {} °".format(value))
-        self.lonvalue = value
         self.plot_mesh()
         
         
@@ -410,3 +476,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
+    
+    
