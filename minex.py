@@ -255,8 +255,9 @@ class py3dcoreGUI(QtWidgets.QWidget): #.QMainWindow
         vlayout_dt = QHBoxLayout()
         self.dtslider = QSlider(Qt.Horizontal)
         self.dtslider.setRange(0, 1000)
+        self.dtslider.setValue(0)
         self.dtslider.setTickInterval(10)
-        
+        self.dtvalue = 0
         vlayout_dt.addWidget(self.dtslider)
         self.dtslider.valueChanged.connect(self.dt_changed)
         self.dt_val = QLabel("\u0394 t: {} h".format(0))
@@ -300,6 +301,8 @@ class py3dcoreGUI(QtWidgets.QWidget): #.QMainWindow
         
         self.lonslider = QSlider(Qt.Horizontal)
         self.lonslider.setRange(-90, 90)
+        self.lonslider.setValue(0)
+        self.lonvalue = 0
         rightbar_layout.addWidget(self.lonslider)
         self.lonslider.valueChanged.connect(self.lon_changed)
         
@@ -374,18 +377,20 @@ class py3dcoreGUI(QtWidgets.QWidget): #.QMainWindow
     def plot_mesh(self):
         runndiff = False
         
-    def dt_changed(self):
+    def dt_changed(self, value):
         self.dt_val.setText("\u0394 t: {} h".format(self.dtslider.value()/10))
         
         selected_date = self.calendar.selectedDate().toPyDate()
         selected_time = QTime.fromString(self.time_combobox.currentText(), "h:mm AP").toPyTime()
         plotdate = dt.datetime.combine(selected_date, selected_time)
-        launchtime = plotdate - datetime.timedelta(hours = self.dtslider.value()/10)
+        launchtime = plotdate - datetime.timedelta(hours = value/10)
         self.dtlabelupdating.setText(launchtime.strftime('%Y-%m-%d %H:%M:00'))
+        self.dtvalue = value
         self.plot_mesh()
         
-    def lon_changed(self):
-        self.lonlabelupdating.setText("lon: {} °".format(self.lonslider.value()))
+    def lon_changed(self, value):
+        self.lonlabelupdating.setText("lon: {} °".format(value))
+        self.lonvalue = value
         self.plot_mesh()
         
         
