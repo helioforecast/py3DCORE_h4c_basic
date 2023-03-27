@@ -33,6 +33,7 @@ hv = get_helioviewer_client()
 straight_vertices, front_vertices, circle_vertices = 10, 10, 20
 filename = 'gcs_params.json'
 draw_modes = ['off', 'point cloud', 'grid']
+font_sizes = [10,12,14,16,18]
 
 # disable sunpy warnings
 log.setLevel('ERROR')
@@ -106,29 +107,89 @@ def load_params():
 
 
 class py3dcoreGUI(QtWidgets.QMainWindow):
-    def __init__(self, date: dt.datetime, spacecraft: List[str], runndiff: bool = False,
-            detector_stereo: str = 'COR2', detector_soho='C2'):
+    def __init__(self):
+        #, date: dt.datetime, spacecraft: List[str], runndiff: bool = False,
+         #   detector_stereo: str = 'COR2', detector_soho='C2'
         super().__init__()
-        self._spacecraft = spacecraft
-        self._date = date
-        self._runndiff = runndiff
-        self._detector_stereo = detector_stereo
-        self._detector_soho = detector_soho
+        self._spacecraft = ['STA','SOHO']
+        self._date = dt.datetime(2020,4,15,6)
+        self._runndiff = False
+        self._detector_stereo = 'COR2'
+        self._detector_soho = 'C2'
+        
+        # (left, top, width, height)
+        self.setGeometry(100,100,2400,1000)
 
         self._root = QtWidgets.QWidget()
         self.setCentralWidget(self._root)
         self._mainlayout = QtWidgets.QHBoxLayout(self._root)
+        
+        
+        
 
-        self._figure = Figure(figsize=(5 * len(spacecraft), 5))
+        self._figure = Figure(figsize=(5 * len(self._spacecraft), 5))
+        self.create_sidebar()
         canvas = FigureCanvas(self._figure)
         self._mainlayout.addWidget(canvas, stretch=5)
-        self.addToolBar(NavigationToolbar(canvas, self))
+        #self.addToolBar(NavigationToolbar(canvas, self))
         self._current_draw_mode = None
+        
+        self.create_timeslider()
 
-        self.create_widgets()
+        #self.create_widgets()
 
         self.make_plot()
         self.show()
+        
+    def create_sidebar(self):
+        
+        layout = QtWidgets.QVBoxLayout()
+        
+        # add calendar widget to select date that should be loaded
+        
+        t_snap_label = QLabel()
+        t_snap_label.setText('Select Date to be shown')
+        layout.addWidget(t_snap_label)
+        calendar = QtWidgets.QCalendarWidget()
+        # setting geometry to the calendar
+        #calendar.setGeometry(50, 50, 400, 250)
+        self.calendar = calendar
+        layout.addWidget(self.calendar)
+        self.calendar.clicked.connect(self.make_plot)
+        
+        # add checkbox to enable or disable plot
+        cb_mode_label = QLabel()
+        cb_mode_label.setText('Display mode')
+        layout.addWidget(cb_mode_label)
+        self._cb_mode = QComboBox()
+        for mode in draw_modes:
+            self._cb_mode.addItem(mode)
+        self._cb_mode.setCurrentIndex(2)
+        layout.addWidget(self._cb_mode)
+        self._cb_mode.currentIndexChanged.connect(self.plot_mesh)
+        
+        # add checkbox to set fontsize
+        fontsize_label = QLabel()
+        fontsize_label.setText('Fontsize')
+        layout.addWidget(fontsize_label)
+        self._fontsize = QComboBox()
+        for font in font_sizes:
+            self._fontsize.addItem(str(font))
+        self._fontsize.setCurrentIndex(1)
+        layout.addWidget(self._fontsize)
+        
+        self._fontsize.currentIndexChanged.connect(self.plot_mesh)        
+        
+        b_save = QtWidgets.QPushButton('Save')
+        b_save.clicked.connect(self.save)
+        layout.addWidget(b_save)
+        layout.addStretch(1)
+
+        self._mainlayout.addLayout(layout, stretch=0)
+        
+    def create_timeslider(self):
+        
+        params = load_params()
 
     def create_widgets(self):
         params = load_params()
@@ -146,15 +207,15 @@ class py3dcoreGUI(QtWidgets.QMainWindow):
             slider.valueChanged.connect(self.plot_mesh)
 
         # add checkbox to enable or disable plot
-        cb_mode_label = QLabel()
-        cb_mode_label.setText('Display mode')
-        layout.addWidget(cb_mode_label)
-        self._cb_mode = QComboBox()
-        for mode in draw_modes:
-            self._cb_mode.addItem(mode)
-        self._cb_mode.setCurrentIndex(2)
-        layout.addWidget(self._cb_mode)
-        self._cb_mode.currentIndexChanged.connect(self.plot_mesh)
+        #cb_mode_label = QLabel()
+        #cb_mode_label.setText('Display mode')
+        #layout.addWidget(cb_mode_label)
+        #self._cb_mode = QComboBox()
+        #for mode in draw_modes:
+        #    self._cb_mode.addItem(mode)
+        #self._cb_mode.setCurrentIndex(2)
+        #layout.addWidget(self._cb_mode)
+        #self._cb_mode.currentIndexChanged.connect(self.plot_mesh)
 
         # add labels for useful quantities
         self._l_radius = QLabel()
@@ -165,14 +226,15 @@ class py3dcoreGUI(QtWidgets.QMainWindow):
         layout.addWidget(b_save)
         layout.addStretch(1)
 
-        self._mainlayout.addLayout(layout, stretch=1)
+        self._mainlayout.addLayout(layout, stretch=0)
 
     def make_plot(self):
         fig = self._figure
         spacecraft = self._spacecraft
         date = self._date
+        print(self.calendar.selectedDate())
         runndiff = self._runndiff
-        spec = GridSpec(ncols=len(spacecraft), nrows=1, figure=fig)
+        spec = GridSpec(ncols=len(self._spacecraft), nrows=1, figure=fig)
 
         axes = []
         images = []
@@ -184,6 +246,14 @@ class py3dcoreGUI(QtWidgets.QMainWindow):
 
             ax = fig.add_subplot(spec[:, i], projection=image)
             axes.append(ax)
+            # change font size for x axis
+            ax.xaxis.get_label().set_fontsize(12)
+            ax.yaxis.get_label().set_fontsize(12)
+            
+            ax.tick_params(axis='x', labelsize=12)
+            ax.tick_params(axis='y', labelsize=12)
+            
+            ax.title.set_size(12)
 
             image.plot(axes=ax, cmap='Greys_r', norm=colors.Normalize(vmin=-30, vmax=30) if runndiff else None)
 
@@ -191,12 +261,14 @@ class py3dcoreGUI(QtWidgets.QMainWindow):
                 # for last plot: move labels to the right
                 ax.coords[1].set_ticks_position('r')
                 ax.coords[1].set_ticklabel_position('r')
+                #ax.coords[1].set_ticklabel(size=10)
                 ax.coords[1].set_axislabel_position('r')
-        self._bg = fig.canvas.copy_from_bbox(fig.bbox)
+                
+        #self._bg = fig.canvas.copy_from_bbox(fig.bbox)
         self._images = images
         self._axes = axes
 
-        self.plot_mesh()
+        #self.plot_mesh()
 
         fig.canvas.draw()
         fig.tight_layout()
@@ -278,22 +350,22 @@ class py3dcoreGUI(QtWidgets.QMainWindow):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Run the 3DCORE GUI', prog='3dcore_gui')
-    parser.add_argument('date', type=lambda d: dt.datetime.strptime(d, '%Y-%m-%d %H:%M'),
-                        help='Date and time for the coronagraph images. Format: "yyyy-mm-dd HH:MM" (with quotes). '
-                             'The closest available image will be loaded for each spacecraft.')
-    parser.add_argument('spacecraft', type=str, nargs='+', choices=['STA', 'STB', 'SOHO'],
-                        help='List of spacecraft to use.')
-    parser.add_argument('-rd', '--running-difference', action='store_true',
-                        help='Whether to use running difference images')
-    parser.add_argument('-soho', type=str, default='C2', choices=['C2', 'C3'],
-                        help='Which coronagraph to use at SOHO/LASCO.')
-    parser.add_argument('-stereo', type=str, default='COR2', choices=['COR1', 'COR2'],
-                        help='Which coronagraph to use at STEREO.')
-    args = parser.parse_args()
+#    parser = argparse.ArgumentParser(description='Run the 3DCORE GUI', prog='3dcore_gui')
+#    parser.add_argument('date', type=lambda d: dt.datetime.strptime(d, '%Y-%m-%d %H:%M'),
+#                        help='Date and time for the coronagraph images. Format: "yyyy-mm-dd HH:MM" (with quotes). '
+#                             'The closest available image will be loaded for each spacecraft.')
+#    parser.add_argument('spacecraft', type=str, nargs='+', choices=['STA', 'STB', 'SOHO'],
+#                        help='List of spacecraft to use.')
+#    parser.add_argument('-rd', '--running-difference', action='store_true',
+#                        help='Whether to use running difference images')
+#    parser.add_argument('-soho', type=str, default='C2', choices=['C2', 'C3'],
+#                        help='Which coronagraph to use at SOHO/LASCO.')
+#    parser.add_argument('-stereo', type=str, default='COR2', choices=['COR1', 'COR2'],
+#                        help='Which coronagraph to use at STEREO.')
+#    args = parser.parse_args()
     qapp = QtWidgets.QApplication(sys.argv)
-    app = py3dcoreGUI(args.date, args.spacecraft, args.running_difference, detector_stereo=args.stereo,
-                 detector_soho=args.soho)
+    app = py3dcoreGUI() #args.date, args.spacecraft, args.running_difference, detector_stereo=args.stereo,
+                 #detector_soho=args.soho
     app.show()
     qapp.exec_()
 

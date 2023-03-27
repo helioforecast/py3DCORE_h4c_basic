@@ -2,7 +2,6 @@ import math
 
 from PyQt5 import QtCore, QtWidgets
 
-
 class SliderAndTextbox(QtWidgets.QWidget):
     """
     Widget representing a slider with label and textbox
