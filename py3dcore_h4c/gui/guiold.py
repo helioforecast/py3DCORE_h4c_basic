@@ -15,7 +15,7 @@ def py3dcore_mesh_rotated(dt_0 = 'now', t_snap = None, delta = 10, model_kwargs:
 def rotate_mesh(mesh, neang):
     return Rotation.from_euler('zyx', [neang[2], neang[1], neang[0]]).apply(mesh)
     
-def py3dcore_mesh(dt_0 = 'now', t_snap = None, delta = 10, model_kwargs: dict = {}):
+def py3dcore_mesh(dt_0 = 'now', t_snap = None, model_kwargs: dict = {}):
     if model_kwargs == {}:
         model_kwargs = get_iparams()
     if dt_0 == 'now':
@@ -26,9 +26,9 @@ def py3dcore_mesh(dt_0 = 'now', t_snap = None, delta = 10, model_kwargs: dict = 
     wf_model = obj.visualize_shape(0,)
     return wf_model
     
-def py3dcore_mesh_sunpy(dt_0 = 'now', t_snap = None, delta = 10, model_kwargs: dict = {}):
+def py3dcore_mesh_sunpy(dt_0 = 'now', t_snap = None, model_kwargs: dict = {}):
     
-    wf_model = py3dcore_mesh(dt_0, t_snap)
+    wf_model = py3dcore_mesh(dt_0, t_snap, model_kwargs)
 
     mc= SkyCoord(wf_model.T[0,:,:]*u.AU, wf_model.T[1,:,:]*u.AU, wf_model.T[2,:,:]*u.AU, frame='heliographic_stonyhurst',representation_type='cartesian')
 
