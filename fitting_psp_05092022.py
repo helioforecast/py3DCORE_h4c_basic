@@ -22,14 +22,14 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 9, 5, 16, tzinfo=datetime.timezone.utc) # 
 
-    t_s = datetime.datetime(2022, 9, 5, 19, tzinfo=datetime.timezone.utc) 
+    t_s = datetime.datetime(2022, 9, 5, 18, tzinfo=datetime.timezone.utc) 
     t_e = datetime.datetime(2022, 9, 6, 8, tzinfo=datetime.timezone.utc)
 
     t_fit = [
-        datetime.datetime(2022, 9, 5, 20, 30, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 5, 22, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 6, 2, 30, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 6, 4, tzinfo=datetime.timezone.utc)
+        datetime.datetime(2022, 9, 5, 19, 5, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 5, 20, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 6, 0, 5, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 6, 2, tzinfo=datetime.timezone.utc)
      ]
 
 # Restraining the initial values for the ensemble members leads to more efficient fitting.
@@ -67,11 +67,11 @@ if __name__ == "__main__":
         "iparams": {
            "cme_longitude": {
                "maximum": 180,
-               "minimum": 0
+               "minimum": 80
            },
            "cme_latitude": {
-               "maximum": 60,
-               "minimum": -30
+               "maximum": 30,
+               "minimum": -50
            },
            "cme_inclination": {
                "maximum": 300,
@@ -82,7 +82,7 @@ if __name__ == "__main__":
                "minimum": 1
            }, 
            "cme_diameter_1au": {
-               "maximum": 0.5,
+               "maximum": 0.8,
                "minimum": 0.05
            },  
            "cme_launch_velocity": {
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     # Deleting a non-empty folder
     try:
-        shutil.rmtree('output'+output, ignore_errors=True)
+        shutil.rmtree('output/'+output, ignore_errors=True)
         logger.info("Successfully cleaned %s" , output)
     except:
         pass
@@ -124,4 +124,4 @@ if __name__ == "__main__":
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
     fitter.add_observer("PSP", t_fit, t_s, t_e, custom_data='psp_2022sep.p')
 
-    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=2, workers=2, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=True, custom_data=True)
+    fitter.run(ensemble_size=1024, reference_frame="HEEQ", jobs=4, workers=4, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=True, custom_data=True)
