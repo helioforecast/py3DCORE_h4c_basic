@@ -28,7 +28,6 @@ from sunpy.coordinates import get_horizons_coord
 from sunpy.map import Map
 from sunpy.visualization import axis_labels_from_ctype
 
-from py3dcore_h4c.gui.geometry import gcs_mesh_sunpy, apex_radius
 from py3dcore_h4c.gui.utils.helioviewer import get_helioviewer_client
 #from py3dcore_h4c.gui.utils.widgets import SliderAndTextbox
 
@@ -398,6 +397,7 @@ class py3dcoreGUI(QtWidgets.QWidget): #.QMainWindow
         ########self._bg = fig.canvas.copy_from_bbox(self.fig.bbox)
         # redraw the canvas
         self.fig.canvas.draw()
+        self.plot_mesh()
     
     def plot_mesh(self):
         # clear the existing subfigures
