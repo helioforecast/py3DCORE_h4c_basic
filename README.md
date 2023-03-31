@@ -1,7 +1,7 @@
-## 3DCORE_h4c extensions (ver 0.0.0)
+## 3DCORE_h4c (ver 0.0.0)
 ========
 
-Extensions to the 3D Coronal Rope Ejection modelling techniqe for coronal mass ejection (CME) flux ropes. The basic version can be found in the repository 'py3DCORE_h4c_basic'. 
+3D Coronal Rope Ejection modelling techniqe for coronal mass ejection (CME) flux ropes. Originally forked from https://github.com/ajefweiss/py3DCORE.
 
 # Installation
 ------------
