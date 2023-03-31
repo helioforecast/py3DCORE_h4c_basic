@@ -66,19 +66,19 @@ if __name__ == "__main__":
         "ensemble_size": int(2**16), #2**17
         "iparams": {
            "cme_longitude": {
-               "maximum": 200,
+               "maximum": 180,
                "minimum": 100
            },
            "cme_latitude": {
-               "maximum": 10,
-               "minimum": -10
+               "maximum": 20,
+               "minimum": -30
            },
            "cme_inclination": {
-               "maximum": 30,
-               "minimum": 0
+               "maximum": 180,
+               "minimum": 80
            }, 
            "cme_aspect_ratio": {
-               "maximum": 5,
+               "maximum": 4,
                "minimum": 1
            }, 
            "cme_launch_velocity": {
@@ -91,7 +91,7 @@ if __name__ == "__main__":
            },
            "t_factor": {
                "maximum": 250,
-               "minimum": 50
+               "minimum": -250
            },
             "background_velocity": {
                "maximum": 700,
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     }
     
     
-    output = 'solo06092022_heeq_512_restrP_test/'
+    output = 'solo06092022_heeq_512_test_Efac_2_lon/'
     
 
     # Deleting a non-empty folder
@@ -114,6 +114,8 @@ if __name__ == "__main__":
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
-    fitter.add_observer("SOLO", t_fit, t_s, t_e)
+    fitter.add_observer("SOLO", t_fit, t_s, t_e, custom_data='solo_2022sep.p')
 
-    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=2, workers=2, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=False)
+    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=4, workers=4, sampling_freq=3600, output=output, 
+               use_multiprocessing=True, custom_data=True)
+
