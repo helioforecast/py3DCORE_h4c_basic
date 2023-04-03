@@ -20,10 +20,10 @@ logging.getLogger("heliosat.spacecraft").setLevel("WARNING")
 if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 6, 2, 6, tzinfo=datetime.timezone.utc)
 
-    t_s_psp = datetime.datetime(2022, 6, 2, 14, tzinfo=datetime.timezone.utc)
-    t_e_psp = datetime.datetime(2022, 6, 2, 18, tzinfo=datetime.timezone.utc)
+    t_s = datetime.datetime(2022, 6, 2, 12, tzinfo=datetime.timezone.utc)
+    t_e = datetime.datetime(2022, 6, 2, 18, tzinfo=datetime.timezone.utc)
 
-    t_psp = [datetime.datetime(2022, 6, 2, 14, 30, tzinfo=datetime.timezone.utc),
+    t = [datetime.datetime(2022, 6, 2, 14, 30, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 6, 2, 15, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 6, 2, 15, 30, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 6, 2, 16, tzinfo=datetime.timezone.utc)]
@@ -63,20 +63,20 @@ if __name__ == "__main__":
         "ensemble_size": int(2**16), 
         "iparams": {
            "cme_longitude": {
-               "maximum": -90,
+               "maximum": 180,
                "minimum": -180
            },
            "cme_latitude": {
-               "maximum": 40,
-               "minimum": -40
+               "maximum": 90,
+               "minimum": -90
            },
            "cme_inclination": {
                "maximum": 90,
                "minimum": 0
            }, 
            "cme_launch_radius": {
-               "maximum": 15,
-               "minimum": 3
+               "maximum": 20,
+               "minimum": 8
            },
            "cme_launch_velocity": {
                "maximum": 1500,
@@ -94,10 +94,11 @@ if __name__ == "__main__":
         }
     }
 
-    output = 'psp02062022_heeq_512_2/'
+    output = 'psp02062022_heeq_512_1/'
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
-    fitter.add_observer("PSP", t_psp, t_s_psp, t_e_psp)
+    fitter.add_observer("PSP", t, t_s, t_e, custom_data='psp_2022jun.p')
 
-    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=2, workers=2, sampling_freq=3600, output=output, eps_quantile=0.25, use_multiprocessing=False, custom_data='psp_2022jun.p')
+    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=5, workers=5, sampling_freq=3600, output=output, 
+               use_multiprocessing=True, custom_data=True)
