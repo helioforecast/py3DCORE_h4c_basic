@@ -19,7 +19,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_frame: str = "HCI", reference_frame_to: str = "HCI", perc: float = 0.95, max_index=None, custom_data= False) -> np.ndarray:
+def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_frame: str="HCI", reference_frame_to: str="HCI", perc: float=0.95, max_index=None, custom_data= False) -> np.ndarray:
     
     """
     Generates an ensemble from a Fitter object.
@@ -40,7 +40,7 @@ def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_fram
     ensemble_data = []
     
 
-    for (observer, _, _, _, _,_) in observers:
+    for (observer, _, _, _, _, _) in observers:
         ftobj = BaseFitter(path) # load Fitter from path
         
         if custom_data == False:
@@ -85,7 +85,7 @@ def generate_ensemble(path: str, dt: Sequence[datetime.datetime], reference_fram
         return ensemble_data
     
     
-def get_ensemble_mean(path: str, dt: Sequence[datetime.datetime], reference_frame: str = "HCI", reference_frame_to: str = "HCI", perc: float = 0.95, max_index=None, custom_data= False) -> np.ndarray:
+def get_ensemble_mean(path: str, dt: Sequence[datetime.datetime], reference_frame: str="HCI", reference_frame_to: str="HCI", perc: float=0.95, max_index=None, custom_data=False) -> np.ndarray:
     
     """
     Generates an ensemble from a Fitter object and calculates the mean.

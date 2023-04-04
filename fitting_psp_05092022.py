@@ -23,10 +23,10 @@ if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 9, 5, 16, tzinfo=datetime.timezone.utc) # 
 
     t_s = datetime.datetime(2022, 9, 5, 18, tzinfo=datetime.timezone.utc) 
-    t_e = datetime.datetime(2022, 9, 6, 8, tzinfo=datetime.timezone.utc)
+    t_e = datetime.datetime(2022, 9, 6, 4, tzinfo=datetime.timezone.utc)
 
     t_fit = [
-        datetime.datetime(2022, 9, 5, 19, 5, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 5, 19, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 5, 20, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 6, 0, 5, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 6, 2, tzinfo=datetime.timezone.utc)
@@ -74,17 +74,23 @@ if __name__ == "__main__":
                "minimum": -50
            },
            "cme_inclination": {
-               "maximum": 300,
-               "minimum": 0
+               "maximum": 160,
+               "minimum": 80
            }, 
            "cme_aspect_ratio": {
-               "maximum": 7,
+               "maximum": 4,
                "minimum": 1
            }, 
            "cme_diameter_1au": {
-               "maximum": 0.8,
+               "maximum": 0.35,
                "minimum": 0.05
            },  
+           "cme_expansion_rate": {
+               "default_value": 0.7
+               #"distribution": "uniform",
+               #"maximum": 0.8,
+               #"minimum": 0.5
+           },   
            "cme_launch_velocity": {
                "maximum": 2000,
                "minimum": 100
@@ -109,7 +115,7 @@ if __name__ == "__main__":
     }
     
     
-    output = 'psp05092022_heeq_512_5/'
+    output = 'psp05092022_heeq_512_11_fixedExpansion07/'
     
 
     # Deleting a non-empty folder
@@ -124,4 +130,5 @@ if __name__ == "__main__":
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
     fitter.add_observer("PSP", t_fit, t_s, t_e, custom_data='psp_2022sep.p')
 
-    fitter.run(ensemble_size=1024, reference_frame="HEEQ", jobs=4, workers=4, sampling_freq=3600, output=output,  eps_quantile=0.25, use_multiprocessing=True, custom_data=True)
+    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=5, workers=5, sampling_freq=3600, output=output, 
+               use_multiprocessing=True, custom_data=True)

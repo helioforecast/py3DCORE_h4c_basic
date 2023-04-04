@@ -561,7 +561,7 @@ def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, traj =
 
         
 
-def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, custom_data=False, save_fig = True, best = True, ensemble = True, mean = False, legend=True, fixed = None):
+def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom_data=False, save_fig=True, best=True, ensemble=True, mean=False, legend=True, fixed=None, max_index=128):
     
     """
     Plots the synthetic insitu data plus the measured insitu data and ensemble fit.
@@ -576,6 +576,7 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
         custom_data       path to custom data, otherwise heliosat is used
         save_fig          whether to save the created figure
         legend            whether to plot legend 
+        max_index         how much to keep of the generated ensemble
 
     Returns:
         None
@@ -623,7 +624,7 @@ def fullinsitu(observer, t_fit=None, start = None, end=None, filepath=None, cust
             
     # get ensemble_data
     if ensemble == True:
-        ed = py3dcore_h4c.generate_ensemble(filepath, t, reference_frame="HEEQ", reference_frame_to="HEEQ", max_index=128, custom_data=custom_data)
+        ed = py3dcore_h4c.generate_ensemble(filepath, t, reference_frame="HEEQ", reference_frame_to="HEEQ", max_index=max_index, custom_data=custom_data)
     
     lw_insitu = 2  # linewidth for plotting the in situ data
     lw_best = 3  # linewidth for plotting the min(eps) run
