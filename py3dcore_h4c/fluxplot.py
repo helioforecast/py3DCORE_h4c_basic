@@ -639,11 +639,8 @@ def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom
         obs_title = 'Parker Solar Probe'
 
     plt.figure(figsize=(20, 10))
-    plt.title("3DCORE fitting result - "+obs_title)
-    plt.plot(t, np.sqrt(np.sum(b**2, axis=1)), "k", alpha=0.5, lw=3, label ='Btotal')
-    plt.plot(t, b[:, 0], "r", alpha=1, lw=lw_insitu, label ='Br')
-    plt.plot(t, b[:, 1], "g", alpha=1, lw=lw_insitu, label ='Bt')
-    plt.plot(t, b[:, 2], "b", alpha=1, lw=lw_insitu, label ='Bn')
+    plt.title("3DCORE fitting result - "+obs_title+" FIELDS data")
+    
     if ensemble == True:
         plt.fill_between(t, ed[0][3][0], ed[0][3][1], alpha=0.25, color="k")
         plt.fill_between(t, ed[0][2][0][:, 0], ed[0][2][1][:, 0], alpha=0.25, color="r")
@@ -652,7 +649,7 @@ def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom
         
     if (best == True) or (fixed is not None):
         if best == True:
-            plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best)#, label ='run with min(eps)')
+            plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best, label ='parameters with min(eps)')
         else:
             plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best)#, label ='run with fixed iparams')
         plt.plot(t, outa[:, 0], "r", alpha=0.5, linestyle='dashed', lw=lw_best)
@@ -660,10 +657,16 @@ def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom
         plt.plot(t, outa[:, 2], "b", alpha=0.5, linestyle='dashed', lw=lw_best)
         
     if mean == True:
-        plt.plot(t, np.sqrt(np.sum(means**2, axis=1)), "k", alpha=0.5, linestyle='dashdot', lw=lw_mean)#, label ='run with mean iparams')
+        plt.plot(t, np.sqrt(np.sum(means**2, axis=1)), "k", alpha=0.5, linestyle='dashdot', lw=lw_mean, label ='mean of parameters')
         plt.plot(t, means[:, 0], "r", alpha=0.75, linestyle='dashdot', lw=lw_mean)
         plt.plot(t, means[:, 1], "g", alpha=0.75, linestyle='dashdot', lw=lw_mean)
         plt.plot(t, means[:, 2], "b", alpha=0.75, linestyle='dashdot', lw=lw_mean)
+        
+    plt.plot(t, np.sqrt(np.sum(b**2, axis=1)), "k", alpha=0.5, lw=3, label ='Btotal')
+    plt.plot(t, b[:, 0], "r", alpha=1, lw=lw_insitu, label ='Br')
+    plt.plot(t, b[:, 1], "g", alpha=1, lw=lw_insitu, label ='Bt')
+    plt.plot(t, b[:, 2], "b", alpha=1, lw=lw_insitu, label ='Bn')
+
         
         
         
@@ -674,7 +677,7 @@ def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom
     # plt.xlabel("Time")
     plt.xticks(rotation=25, ha='right')
     if legend == True:
-        plt.legend(loc='lower right')
+        plt.legend(loc='lower right',ncol=2)
     for _ in t_fit:
         plt.axvline(x=_, lw=lw_fitp, alpha=0.25, color="k", ls="--")
     if save_fig == True:

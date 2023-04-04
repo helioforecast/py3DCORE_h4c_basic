@@ -26,7 +26,7 @@ if __name__ == "__main__":
     t_e = datetime.datetime(2022, 9, 6, 4, tzinfo=datetime.timezone.utc)
 
     t_fit = [
-        datetime.datetime(2022, 9, 5, 19, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 5, 19, 5, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 5, 20, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 6, 0, 5, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 6, 2, tzinfo=datetime.timezone.utc)
@@ -74,7 +74,7 @@ if __name__ == "__main__":
                "minimum": -50
            },
            "cme_inclination": {
-               "maximum": 160,
+               "maximum": 180,
                "minimum": 80
            }, 
            "cme_aspect_ratio": {
@@ -86,14 +86,14 @@ if __name__ == "__main__":
                "minimum": 0.05
            },  
            "cme_expansion_rate": {
-               "default_value": 0.7
-               #"distribution": "uniform",
-               #"maximum": 0.8,
-               #"minimum": 0.5
+               #"default_value": 0.7
+               "distribution": "uniform",
+               "maximum": 1,
+               "minimum": 0.8
            },   
            "cme_launch_velocity": {
                "maximum": 2000,
-               "minimum": 100
+               "minimum": 700
            },
            "cme_launch_radius": {
                "maximum": 14,
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     }
     
     
-    output = 'psp05092022_heeq_512_11_fixedExpansion07/'
+    output = 'psp05092022_heeq_512_18_uniformExpansion/'
     
 
     # Deleting a non-empty folder
