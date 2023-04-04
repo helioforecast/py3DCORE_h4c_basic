@@ -18,13 +18,13 @@ logging.getLogger("heliosat.spacecraft").setLevel("WARNING")
 
 
 if __name__ == "__main__":
-    t_launch = datetime.datetime(2022, 6, 2, 7, 30 tzinfo=datetime.timezone.utc)
+    t_launch = datetime.datetime(2022, 6, 2, 7, 30, tzinfo=datetime.timezone.utc)
 
-    t_s = datetime.datetime(2022, 6, 2, 10, tzinfo=datetime.timezone.utc)
-    t_e = datetime.datetime(2022, 6, 2, 15, tzinfo=datetime.timezone.utc)
+    t_s = datetime.datetime(2022, 6, 2, 11, tzinfo=datetime.timezone.utc)
+    t_e = datetime.datetime(2022, 6, 2, 18, tzinfo=datetime.timezone.utc)
 
     t_fit = [datetime.datetime(2022, 6, 2, 12, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 6, 2, 12, 30, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 6, 2, 13, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 6, 2, 13, 30, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 6, 2, 14, tzinfo=datetime.timezone.utc)]
 
@@ -63,8 +63,8 @@ if __name__ == "__main__":
         "ensemble_size": int(2**16), 
         "iparams": {
            "cme_longitude": {
-               "maximum": -60,
-               "minimum": -140
+               "maximum": 300,
+               "minimum": 200
            },
            "cme_latitude": {
                "maximum": 50,
@@ -75,7 +75,7 @@ if __name__ == "__main__":
                "minimum": 0
            }, 
            "cme_launch_radius": {
-               "maximum": 15,
+               "maximum": 10,
                "minimum": 3
            },
            "cme_launch_velocity": {
@@ -94,7 +94,7 @@ if __name__ == "__main__":
         }
     }
 
-    output = 'psp02062022_heeq_512_5/'
+    output = 'psp02062022_heeq_512_7/'
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
