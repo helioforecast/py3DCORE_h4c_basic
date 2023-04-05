@@ -478,7 +478,8 @@ def full3d_multiview_movie(t_launch, t, filepath, frametime):
     return fig
     
     
-def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, traj = 50, filepath=None, custom_data=False, save_fig = True, legend = True, title = True,**kwargs):
+def full3d(spacecraftlist=['solo', 'psp'], planetlist=['Earth'], t=None, traj=50, filepath=None, custom_data=False, save_fig=True, legend=True, 
+           title=True, view_azim=0, view_elev=45, view_radius=0.2, **kwargs):
     
     """
     Plots 3d.
@@ -515,7 +516,7 @@ def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, traj =
     fig = plt.figure(figsize=(15,12),dpi=200)
     ax = fig.add_subplot(111, projection='3d')
     
-    plot_configure(ax, view_azim=0, view_elev=45, view_radius=0.2)
+    plot_configure(ax, view_azim=view_azim, view_elev=view_elev, view_radius=view_radius)
     
     model_obj = returnmodel(filepath)
     
@@ -526,32 +527,32 @@ def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, traj =
     
     if 'solo' in spacecraftlist:
 
-        plot_traj(ax, sat = 'Solar Orbiter', t_snap = t, frame="HEEQ", traj_pos=True, traj_major = traj, traj_minor=None, custom_data = 'sunpy', color=solo_color,**kwargs)
+        plot_traj(ax, sat='Solar Orbiter', t_snap=t, frame="HEEQ", traj_pos=True, traj_major=traj, traj_minor=None, custom_data='sunpy', color=solo_color,**kwargs)
         
         
     if 'psp' in spacecraftlist:
-        plot_traj(ax, sat = 'Parker Solar Probe', t_snap = t, frame="HEEQ", traj_pos=True, traj_major = traj, traj_minor=None, custom_data = 'sunpy', color=psp_color,**kwargs)
+        plot_traj(ax, sat='Parker Solar Probe', t_snap=t, frame="HEEQ", traj_pos=True, traj_major=traj, traj_minor=None, custom_data='sunpy', color=psp_color,**kwargs)
         
     
     if 'Earth' in planetlist:
         earthpos = np.asarray([1,0, 0])
-        plot_planet(ax,earthpos,color=earth_color,alpha=0.9, label = 'Earth')
-        plot_circle(ax,earthpos[0])
+        plot_planet(ax, earthpos, color=earth_color, alpha=0.9, label='Earth')
+        plot_circle(ax, earthpos[0])
         
     if 'Venus' in planetlist:
-        t_ven, pos_ven, traj_ven  = getpos('Venus Barycenter', t.strftime('%Y-%m-%d-%H'), start, end)
-        plot_planet(ax,pos_ven,color=venus_color,alpha=0.9, label = 'Venus')
-        plot_circle(ax,pos_ven[0])
+        t_ven, pos_ven, traj_ven=getpos('Venus Barycenter', t.strftime('%Y-%m-%d-%H'), start, end)
+        plot_planet(ax, pos_ven, color=venus_color, alpha=0.9, label='Venus')
+        plot_circle(ax, pos_ven[0])
         
     if 'Mercury' in planetlist:
-        t_mer, pos_mer, traj_mer  = getpos('Mercury Barycenter', t.strftime('%Y-%m-%d-%H'), start, end)
-        plot_planet(ax,pos_mer,color=mercury_color,alpha=0.9, label = 'Mercury')
-        plot_circle(ax,pos_mer[0])
+        t_mer, pos_mer, traj_mer=getpos('Mercury Barycenter', t.strftime('%Y-%m-%d-%H'), start, end)
+        plot_planet(ax, pos_mer, color=mercury_color, alpha=0.9, label='Mercury')
+        plot_circle(ax, pos_mer[0])
         
         
     
     if legend == True:
-        ax.legend(loc='lower left')
+        ax.legend(loc='upper right')
     if title == True:
         plt.title('3DCORE fitting result - ' + t.strftime('%Y-%m-%d-%H'))
     if save_fig == True:
@@ -561,7 +562,7 @@ def full3d(spacecraftlist=['solo', 'psp'], planetlist =['Earth'], t=None, traj =
 
         
 
-def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom_data=False, save_fig=True, best=True, ensemble=True, mean=False, legend=True, fixed=None, max_index=128):
+def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom_data=False, save_fig=True, best=True, ensemble=True, mean=False, legend=True, fixed=None, max_index=128, title=True, fit_points=True):
     
     """
     Plots the synthetic insitu data plus the measured insitu data and ensemble fit.
@@ -577,6 +578,8 @@ def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom
         save_fig          whether to save the created figure
         legend            whether to plot legend 
         max_index         how much to keep of the generated ensemble
+        title             whether to plot title 
+        fit_points        whether to indicate fitting points in plot
 
     Returns:
         None
@@ -639,7 +642,9 @@ def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom
         obs_title = 'Parker Solar Probe'
 
     plt.figure(figsize=(20, 10))
-    plt.title("3DCORE fitting result - "+obs_title+" FIELDS data")
+    
+    if title == True:
+        plt.title("3DCORE fitting result - "+obs_title)
     
     if ensemble == True:
         plt.fill_between(t, ed[0][3][0], ed[0][3][1], alpha=0.25, color="k")
@@ -678,8 +683,9 @@ def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom
     plt.xticks(rotation=25, ha='right')
     if legend == True:
         plt.legend(loc='lower right',ncol=2)
-    for _ in t_fit:
-        plt.axvline(x=_, lw=lw_fitp, alpha=0.25, color="k", ls="--")
+    if fit_points == True:    
+        for _ in t_fit:
+            plt.axvline(x=_, lw=lw_fitp, alpha=0.25, color="k", ls="--")
     if save_fig == True:
         plt.savefig(filepath[:-7] + 'fullinsitu.pdf', dpi=300)    
     plt.show()

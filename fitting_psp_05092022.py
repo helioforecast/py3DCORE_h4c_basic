@@ -23,13 +23,27 @@ if __name__ == "__main__":
     t_launch = datetime.datetime(2022, 9, 5, 16, tzinfo=datetime.timezone.utc) # 
 
     t_s = datetime.datetime(2022, 9, 5, 18, tzinfo=datetime.timezone.utc) 
-    t_e = datetime.datetime(2022, 9, 6, 2, 30, tzinfo=datetime.timezone.utc)
+    t_e = datetime.datetime(2022, 9, 6, 8, tzinfo=datetime.timezone.utc)
 
     t_fit = [
         datetime.datetime(2022, 9, 5, 19, 5, tzinfo=datetime.timezone.utc),
+        #datetime.datetime(2022, 9, 5, 19, 30, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 5, 20, tzinfo=datetime.timezone.utc),
+        #datetime.datetime(2022, 9, 5, 20, 30, tzinfo=datetime.timezone.utc),
+        #datetime.datetime(2022, 9, 5, 21, tzinfo=datetime.timezone.utc),
+        #datetime.datetime(2022, 9, 5, 21, 30, tzinfo=datetime.timezone.utc),
+        #datetime.datetime(2022, 9, 5, 22, tzinfo=datetime.timezone.utc),
+        #datetime.datetime(2022, 9, 5, 22, 30, tzinfo=datetime.timezone.utc),
+        #datetime.datetime(2022, 9, 5, 23, tzinfo=datetime.timezone.utc),
         datetime.datetime(2022, 9, 6, 0, 5, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 6, 2, tzinfo=datetime.timezone.utc)
+        #datetime.datetime(2022, 9, 6, 0, 30, tzinfo=datetime.timezone.utc),
+        #datetime.datetime(2022, 9, 6, 1, tzinfo=datetime.timezone.utc),
+        #datetime.datetime(2022, 9, 6, 1, 30, tzinfo=datetime.timezone.utc),
+        #datetime.datetime(2022, 9, 6, 2, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 6, 2, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 6, 3, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 6, 4, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2022, 9, 6, 6, 30, tzinfo=datetime.timezone.utc)
      ]
 
 # Restraining the initial values for the ensemble members leads to more efficient fitting.
@@ -67,15 +81,15 @@ if __name__ == "__main__":
         "iparams": {
            "cme_longitude": {
                "maximum": 180,
-               "minimum": 80
+               "minimum": 100
            },
            "cme_latitude": {
-               "maximum": 30,
+               "maximum": 20,
                "minimum": -50
            },
            "cme_inclination": {
                "maximum": 180,
-               "minimum": 80
+               "minimum": 100
            }, 
            "cme_aspect_ratio": {
                "maximum": 4,
@@ -83,7 +97,7 @@ if __name__ == "__main__":
            }, 
            "cme_diameter_1au": {
                "maximum": 0.35,
-               "minimum": 0.05
+               "minimum": 0.2
            },  
            "cme_expansion_rate": {
                #"default_value": 0.7
@@ -96,7 +110,7 @@ if __name__ == "__main__":
                "minimum": 700
            },
            "cme_launch_radius": {
-               "maximum": 14,
+               "maximum": 12,
                "minimum": 5
            },
            "t_factor": {
@@ -115,7 +129,7 @@ if __name__ == "__main__":
     }
     
     
-    output = 'psp05092022_heeq_512_19_uniformExpansion/'
+    output = 'psp05092022_heeq_512_25_uniformExpansion_7FPs/'
     
 
     # Deleting a non-empty folder
