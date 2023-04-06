@@ -20,17 +20,19 @@ logging.getLogger("heliosat.spacecraft").setLevel("WARNING")
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    t_launch = datetime.datetime(2022, 9, 5, 18, tzinfo=datetime.timezone.utc) # launch time assumed at CME impact at PSP at 14.72 Rs
+    t_launch = datetime.datetime(2019, 5, 22, 22, tzinfo=datetime.timezone.utc) # 
 
-    t_s = datetime.datetime(2022, 9, 7, 8, tzinfo=datetime.timezone.utc) 
-    t_e = datetime.datetime(2022, 9, 8, 3, tzinfo=datetime.timezone.utc)
+    t_s = datetime.datetime(2019, 5, 27, 5, tzinfo=datetime.timezone.utc) 
+    t_e = datetime.datetime(2019, 5, 28, 0, tzinfo=datetime.timezone.utc)
 
     t_fit = [
-        datetime.datetime(2022, 9, 7, 9, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 7, 15, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 7, 20, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 8, 2, tzinfo=datetime.timezone.utc)
-     ]
+        datetime.datetime(2019, 5, 27, 8, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2019, 5, 27, 11, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2019, 5, 27, 14, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2019, 5, 27, 17, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2019, 5, 27, 20, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2019, 5, 27, 22, tzinfo=datetime.timezone.utc)
+    ]
 
 # Restraining the initial values for the ensemble members leads to more efficient fitting.
 # 
@@ -43,7 +45,7 @@ if __name__ == "__main__":
 #         3: inc          inclination
 # 
 #         4: dia          cross section diameter at 1 AU
-#         5: delta        cross section aspect ratio
+#         5: delta        cross section aspect rati
 # 
 #         6: r0           initial cme radius
 #         7: v0           initial cme velocity
@@ -67,11 +69,11 @@ if __name__ == "__main__":
         "iparams": {
            "cme_longitude": {
                "maximum": 180,
-               "minimum": 0
+               "minimum": -180
            },
            "cme_latitude": {
-               "maximum": 50,
-               "minimum": -50
+               "maximum": 90,
+               "minimum": -90
            },
            "cme_inclination": {
                "maximum": 360,
@@ -81,32 +83,46 @@ if __name__ == "__main__":
                "maximum": 4,
                "minimum": 1
            }, 
-           "cme_launch_velocity": {
-               "maximum": 2000,
-               "minimum": 800
-           },
+           #"cme_diameter_1au": {
+           #    "maximum": 0.35,
+           #    "minimum": 0.2
+           #},  
+          # "cme_expansion_rate": {
+          #     #"default_value": 0.7
+          #     "distribution": "uniform",
+          #     "maximum": 1,
+          #     "minimum": 0.8
+          # },   
+          # "cme_launch_velocity": {
+          #     "maximum": 2000,
+          #     "minimum": 700
+          # },
            "cme_launch_radius": {
-               "maximum": 16,
-               "minimum": 14
+               "maximum": 30,
+               "minimum": 8
            },
            "t_factor": {
                "maximum": 250,
                "minimum": -250
-           }#,
+           },
+           #"background_drag": {
+           #    "maximum": 4,
+           #    "minimum": 0.2
+           #}, 
            # "background_velocity": {
            #    "maximum": 700,
-           #    "minimum": 400
+           #    "minimum": 50
            #} 
         }
     }
     
     
-    output = 'solo06092022_heeq_512_heliosat/'
+    output = 'wind27052019_heeq_512_2/'
     
 
     # Deleting a non-empty folder
     try:
-        shutil.rmtree('output'+output, ignore_errors=True)
+        shutil.rmtree('output/'+output, ignore_errors=True)
         logger.info("Successfully cleaned %s" , output)
     except:
         pass
@@ -114,8 +130,7 @@ if __name__ == "__main__":
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
-    fitter.add_observer("SOLO", t_fit, t_s, t_e)#, custom_data='solo_2022sep.p')
+    fitter.add_observer("WIND", t_fit, t_s, t_e)#, custom_data='wind_2019may.p')
 
-    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=6, workers=6, sampling_freq=3600, output=output, 
+    fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=5, workers=5, sampling_freq=3600, output=output, 
                use_multiprocessing=True, custom_data=False)
-

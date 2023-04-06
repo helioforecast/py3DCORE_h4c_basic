@@ -20,16 +20,16 @@ logging.getLogger("heliosat.spacecraft").setLevel("WARNING")
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    t_launch = datetime.datetime(2022, 9, 5, 18, tzinfo=datetime.timezone.utc) # launch time assumed at CME impact at PSP at 14.72 Rs
+    t_launch = datetime.datetime(2021, 1, 14, 8, tzinfo=datetime.timezone.utc) # launch time assumed at CME impact at PSP at 14.72 Rs
 
-    t_s = datetime.datetime(2022, 9, 7, 8, tzinfo=datetime.timezone.utc) 
-    t_e = datetime.datetime(2022, 9, 8, 3, tzinfo=datetime.timezone.utc)
+    t_s = datetime.datetime(2021, 1, 15, 8, tzinfo=datetime.timezone.utc) 
+    t_e = datetime.datetime(2021, 1, 15, 16, tzinfo=datetime.timezone.utc)
 
     t_fit = [
-        datetime.datetime(2022, 9, 7, 9, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 7, 15, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 7, 20, tzinfo=datetime.timezone.utc),
-        datetime.datetime(2022, 9, 8, 2, tzinfo=datetime.timezone.utc)
+        datetime.datetime(2021, 1, 15, 10, 30, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2021, 1, 15, 12, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2021, 1, 15, 13, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2021, 1, 15, 14, tzinfo=datetime.timezone.utc)
      ]
 
 # Restraining the initial values for the ensemble members leads to more efficient fitting.
@@ -66,28 +66,28 @@ if __name__ == "__main__":
         "ensemble_size": int(2**16), #2**17
         "iparams": {
            "cme_longitude": {
-               "maximum": 180,
+               "maximum": 360,
                "minimum": 0
            },
            "cme_latitude": {
-               "maximum": 50,
-               "minimum": -50
+               "maximum": 90,
+               "minimum": -90
            },
            "cme_inclination": {
                "maximum": 360,
                "minimum": 0
            }, 
            "cme_aspect_ratio": {
-               "maximum": 4,
+               "maximum": 5,
                "minimum": 1
            }, 
            "cme_launch_velocity": {
                "maximum": 2000,
-               "minimum": 800
+               "minimum": 500
            },
            "cme_launch_radius": {
-               "maximum": 16,
-               "minimum": 14
+               "maximum": 30,
+               "minimum": 8
            },
            "t_factor": {
                "maximum": 250,
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     }
     
     
-    output = 'solo06092022_heeq_512_heliosat/'
+    output = 'solo15012021_heeq_512_custom_2/'
     
 
     # Deleting a non-empty folder
@@ -114,8 +114,8 @@ if __name__ == "__main__":
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
-    fitter.add_observer("SOLO", t_fit, t_s, t_e)#, custom_data='solo_2022sep.p')
+    fitter.add_observer("solo", t_fit, t_s, t_e, custom_data='solo_2021jan.p')
 
     fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=6, workers=6, sampling_freq=3600, output=output, 
-               use_multiprocessing=True, custom_data=False)
+               use_multiprocessing=True, custom_data=True)
 

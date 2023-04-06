@@ -139,9 +139,11 @@ def cdftopickle(magpath, swapath, sc):
     '''creating a pickle file from cdf'''
     
     if sc == 'solo':
-        fullname = 'Solar Orbiter'
+        fullname = 'solar orbiter'
     if sc == 'psp':
         fullname = 'Parker Solar Probe'
+    if sc == 'wind':
+        fullname = 'WIND'    
     
     timep = np.zeros(0,dtype=[('time',object)])
     den = np.zeros(0)
@@ -198,10 +200,24 @@ def cdftopickle(magpath, swapath, sc):
     for i in np.arange(0,len(llfiles)):
         m1 = cdflib.CDF(llfiles[i])
         
-        try:
+        if sc == 'solo':
             b = m1.varget('B_RTN')
-        except:
+            time = m1.varget('EPOCH')
+        #try:
+        #    b = m1.varget('B_RTN')
+        
+        elif sc == 'psp':
             b = m1.varget('psp_fld_l2_mag_RTN_1min')
+            time = m1.varget('epoch_mag_RTN_1min')
+        #except:
+        #    b = m1.varget('psp_fld_l2_mag_RTN_1min')
+        
+        elif sc =='wind':
+            b = m1.varget('BRTN')
+            time = m1.varget('Epoch')
+                
+        else:
+            print('No data from cdf file')
             
         br = b[:, 0]
         bt = b[:, 1]
@@ -211,10 +227,10 @@ def cdftopickle(magpath, swapath, sc):
         bt1 = np.append(bt1, bt)
         bn1 = np.append(bn1, bn)
 
-        try:
-            time = m1.varget('EPOCH')
-        except:
-            time = m1.varget('epoch_mag_RTN_1min')
+        #try:
+        #    time = m1.varget('EPOCH')
+        #except:
+        #    time = m1.varget('epoch_mag_RTN_1min')
             
         t1 = parse_time(cdflib.cdfastropy.convert_to_astropy(time, format=None)).datetime
         time1 = np.append(time1,t1)
@@ -255,24 +271,8 @@ def cdftopickle(magpath, swapath, sc):
         ll.vz = np.interp(time_int_mat, timep_mat, vn)
         ll.vt = np.sqrt(ll.vx**2 + ll.vy**2 + ll.vz**2)
 
-
-    try:
-        #spacecraft position with astrospice
-        kernels = astrospice.registry.get_kernels(fullname, 'predict')
-        solo_kernel = kernels[0]
-
-        solo_coords = astrospice.generate_coords(fullname, time_int)
-        
-        solo_coords_heeq = solo_coords.transform_to(sunpy.coordinates.HeliographicStonyhurst())
-
-        ll.lon = solo_coords_heeq.lon.value
-        ll.lat = solo_coords_heeq.lat.value
-        ll.r = solo_coords_heeq.radius.to(u.au).value    
-
-        ll = sphere2cart(ll)
-        print(ll.x, ll.y, ll.z)
-        
-    except:  
+    if sc == 'solo':
+        #Solar Orbiter position with sunpy
         coord = get_horizons_coord(sc, time={'start': time_int[0], 'stop': time_int[-1], 'step': '1m'})  
         heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
         
@@ -281,22 +281,85 @@ def cdftopickle(magpath, swapath, sc):
         ll.lon = heeq.lon.value
         ll.lat = heeq.lat.value
         
-        ###solo_coords = get_horizons_coord(sc, time_int)
-        ###solo_coords = [get_horizons_coord(sc, i.strftime('%Y-%m-%d %H:%M')) for i in time_int[0:10]]
-        
-        #spice.furnish(spicedata.get_kernel('psp_pred'))
-        #psp2=spice.Trajectory('SPP')
-        #psp2.generate_positions(time_int, 'Sun','HEEQ')
-        #psp2.change_units(astropy.units.AU)
-        
-        #solo_ll.x = psp2.x
-        #solo_ll.y = psp2.y
-        #solo_ll.z = psp2.z
         ll = sphere2cart(ll)
         
         print(ll.x, ll.y, ll.z)
+        
+        #Solar Orbiter position with astrospice
+        #kernels = astrospice.registry.get_kernels(fullname, 'predict')
+        #solo_kernel = kernels[0]
 
+        #solo_coords = astrospice.generate_coords(fullname, time_int)
+        
+        #solo_coords_heeq = solo_coords.transform_to(sunpy.coordinates.HeliographicStonyhurst())
+
+        #ll.lon = solo_coords_heeq.lon.value
+        #ll.lat = solo_coords_heeq.lat.value
+        #ll.r = solo_coords_heeq.radius.to(u.au).value    
+
+        #ll = sphere2cart(ll)
+        #print(ll.x, ll.y, ll.z)
+        
+    #try:
+    #    #spacecraft position with astrospice
+    #    kernels = astrospice.registry.get_kernels(fullname, 'predict')
+    #    solo_kernel = kernels[0]
+    #
+    #    solo_coords = astrospice.generate_coords(fullname, time_int)
+    #    
+    #    solo_coords_heeq = solo_coords.transform_to(sunpy.coordinates.HeliographicStonyhurst())
+    #
+    #    ll.lon = solo_coords_heeq.lon.value
+    #    ll.lat = solo_coords_heeq.lat.value
+    #    ll.r = solo_coords_heeq.radius.to(u.au).value    
+    #
+    #    ll = sphere2cart(ll)
+    #    print(ll.x, ll.y, ll.z)
     
+    elif sc == 'psp':    
+        #PSP position with sunpy
+        coord = get_horizons_coord(sc, time={'start': time_int[0], 'stop': time_int[-1], 'step': '1m'})  
+        heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+        
+        #time=heeq.obstime.to_datetime()
+        ll.r = heeq.radius.value
+        ll.lon = heeq.lon.value
+        ll.lat = heeq.lat.value
+        
+        ll = sphere2cart(ll)
+        
+        print(ll.x, ll.y, ll.z)
+            
+    #except:  
+    #    coord = get_horizons_coord(sc, time={'start': time_int[0], 'stop': time_int[-1], 'step': '1m'})  
+    #    heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+    #    
+    #    ll.r = heeq.radius.value
+    #    ll.lon = heeq.lon.value
+    #    ll.lat = heeq.lat.value
+    #    
+    #    ll = sphere2cart(ll)
+    #    
+    #    print(ll.x, ll.y, ll.z)
+
+    elif sc == 'WIND':
+        #WIND position with sunpy
+        coord = get_horizons_coord(sc, time={'start': time_int[0], 'stop': time_int[-1], 'step': '1m'})  
+        heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+        
+        ll.r = heeq.radius.value
+        ll.lon = heeq.lon.value
+        ll.lat = heeq.lat.value
+        
+        
+        ll = sphere2cart(ll)
+        
+        print(ll.x, ll.y, ll.z)
+     
+    else:
+        print('no spacecraft position')
+        
+        
     return ll
     
     

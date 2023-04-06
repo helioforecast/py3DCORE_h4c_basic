@@ -634,12 +634,15 @@ def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom
     lw_mean = 3  # linewidth for plotting the mean run
     lw_fitp = 2  # linewidth for plotting the lines where fitting points
     
-    if observer == 'solo':
+    if observer == 'SOLO':
         obs_title = 'Solar Orbiter'
 
         
     if observer == 'PSP':
         obs_title = 'Parker Solar Probe'
+        
+    if observer == 'WIND':
+        obs_title = 'WIND'    
 
     plt.figure(figsize=(20, 10))
     
