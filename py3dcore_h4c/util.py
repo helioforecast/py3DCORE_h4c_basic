@@ -143,7 +143,7 @@ def cdftopickle(magpath, swapath, sc):
     if sc == 'psp':
         fullname = 'Parker Solar Probe'
     if sc == 'wind':
-        fullname = 'WIND'    
+        fullname = 'Wind'    
     
     timep = np.zeros(0,dtype=[('time',object)])
     den = np.zeros(0)
@@ -201,18 +201,21 @@ def cdftopickle(magpath, swapath, sc):
         m1 = cdflib.CDF(llfiles[i])
         
         if sc == 'solo':
+            print('solo cdf')
             b = m1.varget('B_RTN')
             time = m1.varget('EPOCH')
         #try:
         #    b = m1.varget('B_RTN')
         
         elif sc == 'psp':
+            print('psp cdf')
             b = m1.varget('psp_fld_l2_mag_RTN_1min')
             time = m1.varget('epoch_mag_RTN_1min')
         #except:
         #    b = m1.varget('psp_fld_l2_mag_RTN_1min')
         
         elif sc =='wind':
+            print('wind cdf')
             b = m1.varget('BRTN')
             time = m1.varget('Epoch')
                 
@@ -255,8 +258,17 @@ def cdftopickle(magpath, swapath, sc):
         
 
     ll = ll.view(np.recarray)  
+    
+    # replace all unreasonable large and small values with nan
+    thresh = 1e6
+    br1[br1 > thresh] = np.nan
+    br1[br1 < -thresh] = np.nan
+    bt1[bt1 > thresh] = np.nan
+    bt1[bt1 < -thresh] = np.nan
+    bn1[bn1 > thresh] = np.nan
+    bn1[bn1 < -thresh] = np.nan
 
-
+    
     ll.time = time_int
     ll.bx = np.interp(time_int_mat, time1_mat[~np.isnan(br1)], br1[~np.isnan(br1)])
     ll.by = np.interp(time_int_mat, time1_mat[~np.isnan(bt1)], bt1[~np.isnan(bt1)])
@@ -317,11 +329,10 @@ def cdftopickle(magpath, swapath, sc):
     #    print(ll.x, ll.y, ll.z)
     
     elif sc == 'psp':    
-        #PSP position with sunpy
+        # PSP position with sunpy
         coord = get_horizons_coord(sc, time={'start': time_int[0], 'stop': time_int[-1], 'step': '1m'})  
         heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
         
-        #time=heeq.obstime.to_datetime()
         ll.r = heeq.radius.value
         ll.lon = heeq.lon.value
         ll.lat = heeq.lat.value
@@ -342,9 +353,11 @@ def cdftopickle(magpath, swapath, sc):
     #    
     #    print(ll.x, ll.y, ll.z)
 
-    elif sc == 'WIND':
-        #WIND position with sunpy
-        coord = get_horizons_coord(sc, time={'start': time_int[0], 'stop': time_int[-1], 'step': '1m'})  
+    elif sc == 'wind':
+        # WIND position with sunpy
+        
+        # use 
+        coord = get_horizons_coord('EM-L1', time={'start': time_int[0], 'stop': time_int[-1], 'step': '1m'})  
         heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
         
         ll.r = heeq.radius.value

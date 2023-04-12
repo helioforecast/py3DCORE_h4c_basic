@@ -117,7 +117,7 @@ if __name__ == "__main__":
     }
     
     
-    output = 'wind27052019_heeq_512_2/'
+    output = 'wind27052019_heeq_512_custom_1/'
     
 
     # Deleting a non-empty folder
@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
     fitter = py3dcore_h4c.ABC_SMC()
     fitter.initialize(t_launch, py3dcore_h4c.ToroidalModel, model_kwargs)
-    fitter.add_observer("WIND", t_fit, t_s, t_e)#, custom_data='wind_2019may.p')
+    fitter.add_observer("wind", t_fit, t_s, t_e, custom_data='wind_2019may.p')
 
     fitter.run(ensemble_size=512, reference_frame="HEEQ", jobs=5, workers=5, sampling_freq=3600, output=output, 
-               use_multiprocessing=True, custom_data=False)
+               use_multiprocessing=True, custom_data=True)

@@ -596,7 +596,6 @@ def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom
         observer_obj = getattr(heliosat, observer)() # get observer obj
         logger.info("Using HelioSat to retrieve observer data")
         dt, b = observer_obj.get([start, end], "mag", reference_frame="HEEQ", as_endpoints=True)
-    # print(t)
         t = []
         t = [datetime.datetime.fromtimestamp(dt[i]) for i in range(len(dt))] # .strftime('%Y-%m-%d %H:%M:%S.%f')
     else:
@@ -634,14 +633,14 @@ def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom
     lw_mean = 3  # linewidth for plotting the mean run
     lw_fitp = 2  # linewidth for plotting the lines where fitting points
     
-    if observer == 'SOLO':
+    if observer == 'solo':
         obs_title = 'Solar Orbiter'
 
         
-    if observer == 'PSP':
+    if observer == 'psp':
         obs_title = 'Parker Solar Probe'
         
-    if observer == 'WIND':
+    if observer == 'wind':
         obs_title = 'WIND'    
 
     plt.figure(figsize=(20, 10))
@@ -657,7 +656,7 @@ def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom
         
     if (best == True) or (fixed is not None):
         if best == True:
-            plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best, label ='parameters with min(eps)')
+            plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best, label='parameters with min(eps)')
         else:
             plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best)#, label ='run with fixed iparams')
         plt.plot(t, outa[:, 0], "r", alpha=0.5, linestyle='dashed', lw=lw_best)
@@ -665,15 +664,15 @@ def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom
         plt.plot(t, outa[:, 2], "b", alpha=0.5, linestyle='dashed', lw=lw_best)
         
     if mean == True:
-        plt.plot(t, np.sqrt(np.sum(means**2, axis=1)), "k", alpha=0.5, linestyle='dashdot', lw=lw_mean, label ='mean of parameters')
+        plt.plot(t, np.sqrt(np.sum(means**2, axis=1)), "k", alpha=0.5, linestyle='dashdot', lw=lw_mean, label='mean of parameters')
         plt.plot(t, means[:, 0], "r", alpha=0.75, linestyle='dashdot', lw=lw_mean)
         plt.plot(t, means[:, 1], "g", alpha=0.75, linestyle='dashdot', lw=lw_mean)
         plt.plot(t, means[:, 2], "b", alpha=0.75, linestyle='dashdot', lw=lw_mean)
         
-    plt.plot(t, np.sqrt(np.sum(b**2, axis=1)), "k", alpha=0.5, lw=3, label ='Btotal')
-    plt.plot(t, b[:, 0], "r", alpha=1, lw=lw_insitu, label ='Br')
-    plt.plot(t, b[:, 1], "g", alpha=1, lw=lw_insitu, label ='Bt')
-    plt.plot(t, b[:, 2], "b", alpha=1, lw=lw_insitu, label ='Bn')
+    plt.plot(t, np.sqrt(np.sum(b**2, axis=1)), "k", alpha=0.5, lw=3, label='Btotal')
+    plt.plot(t, b[:, 0], "r", alpha=1, lw=lw_insitu, label='Br')
+    plt.plot(t, b[:, 1], "g", alpha=1, lw=lw_insitu, label='Bt')
+    plt.plot(t, b[:, 2], "b", alpha=1, lw=lw_insitu, label='Bn')
 
         
         
@@ -774,15 +773,15 @@ def insituprofiles(observer, date=None, start=None, end=None, filepath=None, sav
             plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best)#, label ='run with min(eps)')
         else:
             plt.plot(t, np.sqrt(np.sum(outa**2, axis=1)), "k", alpha=0.5, linestyle='dashed', lw=lw_best)#, label ='run with fixed iparams')
-        plt.plot(t, outa[:, 0], "r", alpha=0.5,linestyle='dashed', lw=lw_best)
-        plt.plot(t, outa[:, 1], "g", alpha=0.5,linestyle='dashed', lw=lw_best)
-        plt.plot(t, outa[:, 2], "b", alpha=0.5,linestyle='dashed', lw=lw_best)
+        plt.plot(t, outa[:, 0], "r", alpha=0.5, linestyle='dashed', lw=lw_best)
+        plt.plot(t, outa[:, 1], "g", alpha=0.5, linestyle='dashed', lw=lw_best)
+        plt.plot(t, outa[:, 2], "b", alpha=0.5, linestyle='dashed', lw=lw_best)
         
     if mean == True:
         plt.plot(t, np.sqrt(np.sum(means**2, axis=1)), "k", alpha=0.5, linestyle='dashdot', lw=lw_mean)#, label ='run with mean iparams')
-        plt.plot(t, means[:, 0], "r", alpha=0.75,linestyle='dashdot', lw=lw_mean)
-        plt.plot(t, means[:, 1], "g", alpha=0.75,linestyle='dashdot', lw=lw_mean)
-        plt.plot(t, means[:, 2], "b", alpha=0.75,linestyle='dashdot', lw=lw_mean)
+        plt.plot(t, means[:, 0], "r", alpha=0.75, linestyle='dashdot', lw=lw_mean)
+        plt.plot(t, means[:, 1], "g", alpha=0.75, linestyle='dashdot', lw=lw_mean)
+        plt.plot(t, means[:, 2], "b", alpha=0.75, linestyle='dashdot', lw=lw_mean)
         
         
         
@@ -898,7 +897,7 @@ def returnfixedmodel(filepath, fixed_iparams_arr=None):
     
     
     
-def plot_configure(ax, light_source = False, **kwargs):
+def plot_configure(ax, light_source=False, **kwargs):
     view_azim = kwargs.pop("view_azim", -25)
     view_elev = kwargs.pop("view_elev", 25)
     view_radius = kwargs.pop("view_radius", .5)
@@ -912,7 +911,7 @@ def plot_configure(ax, light_source = False, **kwargs):
     if light_source == True:
         #draw sun        
         ls = LightSource(azdeg=320, altdeg=40)  
-        ax.plot_surface(x, y, z, rstride=1, cstride=1, color='yellow',lightsource=ls, linewidth=0, antialiased=False,zorder=5)
+        ax.plot_surface(x, y, z, rstride=1, cstride=1, color='yellow', lightsource=ls, linewidth=0, antialiased=False, zorder=5)
     
     ax.set_axis_off()
 
@@ -934,7 +933,7 @@ def plot_3dcore(ax, obj, t_snap, light_source=False, **kwargs):
 def plot_3dcore_field(ax, obj, step_size=0.005, q0=[0.8, .1, np.pi/2],**kwargs):
 
     #initial point is q0
-    q0i =np.array(q0, dtype=np.float32)
+    q0i = np.array(q0, dtype=np.float32)
     fl = visualize_fieldline(obj, q0, index=0, steps=8000, step_size=0.005)
     #fl = model_obj.visualize_fieldline_dpsi(q0i, dpsi=2*np.pi-0.01, step_size=step_size)
     ax.plot(*fl.T, **kwargs)
@@ -942,26 +941,26 @@ def plot_3dcore_field(ax, obj, step_size=0.005, q0=[0.8, .1, np.pi/2],**kwargs):
 def plot_circle(ax,dist,**kwargs):        
 
     thetac = np.linspace(0, 2 * np.pi, 100)
-    xc=dist*np.sin(thetac)
-    yc=dist*np.cos(thetac)
-    zc=0
-    ax.plot(xc,yc,zc,ls='--',color='black',lw=0.3,**kwargs)
+    xc = dist * np.sin(thetac)
+    yc = dist * np.cos(thetac)
+    zc = 0
+    ax.plot(xc, yc, zc, ls='--', color='black', lw=0.3, **kwargs)
       
-def plot_satellite(ax,satpos1,**kwargs):
+def plot_satellite(ax, satpos1, **kwargs):
 
-    xc=satpos1[0]*np.cos(np.radians(satpos1[1]))
-    yc=satpos1[0]*np.sin(np.radians(satpos1[1]))
-    zc=0
+    xc = satpos1[0] * np.cos(np.radians(satpos1[1]))
+    yc = satpos1[0] * np.sin(np.radians(satpos1[1]))
+    zc = 0
     #print(xc,yc,zc)
-    ax.scatter3D(xc,yc,zc,marker ='s',**kwargs)
+    ax.scatter3D(xc, yc, zc, marker='s',**kwargs)
         
-def plot_planet(ax,satpos1,**kwargs):
+def plot_planet(ax, satpos1, **kwargs):
 
-    xc=satpos1[0]*np.cos(np.radians(satpos1[1]))
-    yc=satpos1[0]*np.sin(np.radians(satpos1[1]))
-    zc=0
+    xc = satpos1[0] * np.cos(np.radians(satpos1[1]))
+    yc = satpos1[0] * np.sin(np.radians(satpos1[1]))
+    zc = 0
     #print(xc,yc,zc)
-    ax.scatter3D(xc,yc,zc,s=10,**kwargs)
+    ax.scatter3D(xc, yc, zc, s=10, **kwargs)
     
     
 def visualize_wireframe(obj, index=0, r=1.0, d=10):
