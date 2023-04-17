@@ -7,16 +7,10 @@ import seaborn as sns
 sns.set_style('whitegrid')
 sns.set_context('paper')
 
-
-from matplotlib.widgets import Slider, Button
-
-from matplotlib.colors import LightSource
-
 import datetime as datetime
 from datetime import timedelta
 import py3dcore_h4c
 from py3dcore_h4c.fitter.base import custom_observer, BaseFitter, get_ensemble_mean
-
 
 from sunpy.coordinates import frames, get_horizons_coord
 import heliosat
@@ -27,11 +21,30 @@ from py3dcore_h4c.models.toroidal import thin_torus_gh, thin_torus_qs, thin_toru
 
 from .rotqs import generate_quaternions
 
+import matplotlib as matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from matplotlib.widgets import Slider, Button
+from matplotlib.colors import LightSource
+
+from itertools import product
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+# settings for plots
 
 SMALL_SIZE = 20
 MEDIUM_SIZE = 22
 BIGGER_SIZE = 24
+
+matplotlib.rcParams['mathtext.fontset'] = 'custom'
+matplotlib.rcParams['mathtext.rm'] = 'DejaVu Sans'
+matplotlib.rcParams['mathtext.it'] = 'DejaVu Sans:italic'
+matplotlib.rcParams['mathtext.bf'] = 'DejaVu Sans:bold'
+#matplotlib.rcParams['mathtext.fontset'] = 'stix' 
+#matplotlib.rcParams['font.family'] = 'STIXGeneral'
 
 plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
 # plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
@@ -41,13 +54,7 @@ plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('axes', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
-import matplotlib.dates as mdates
-
-from itertools import product
-
-import logging
-
-logger = logging.getLogger(__name__)
+##################################
 
 def get_overwrite(out):
     
@@ -669,10 +676,10 @@ def fullinsitu(observer, t_fit=None, start=None, end=None, filepath=None, custom
         plt.plot(t, means[:, 1], "g", alpha=0.75, linestyle='dashdot', lw=lw_mean)
         plt.plot(t, means[:, 2], "b", alpha=0.75, linestyle='dashdot', lw=lw_mean)
         
-    plt.plot(t, np.sqrt(np.sum(b**2, axis=1)), "k", alpha=0.5, lw=3, label='Btotal')
-    plt.plot(t, b[:, 0], "r", alpha=1, lw=lw_insitu, label='Br')
-    plt.plot(t, b[:, 1], "g", alpha=1, lw=lw_insitu, label='Bt')
-    plt.plot(t, b[:, 2], "b", alpha=1, lw=lw_insitu, label='Bn')
+    plt.plot(t, np.sqrt(np.sum(b**2, axis=1)), "k", alpha=0.5, lw=3, label='|$\mathbf{B}$|')
+    plt.plot(t, b[:, 0], "r", alpha=1, lw=lw_insitu, label='B$_r$')
+    plt.plot(t, b[:, 1], "g", alpha=1, lw=lw_insitu, label='B$_t$')
+    plt.plot(t, b[:, 2], "b", alpha=1, lw=lw_insitu, label='B$_n$')
 
         
         

@@ -136,7 +136,15 @@ def _numba_set_random_seed(seed: int) -> None:
     
 def cdftopickle(magpath, swapath, sc):
     
-    '''creating a pickle file from cdf'''
+    '''
+    creating a pickle file from cdf
+    
+    magpath        path to directory with magnetic field data
+    swapath        path to directory with solar wind data (not needed for 3DCORE)
+    sc             spacecraft
+    
+    '''
+    
     
     if sc == 'solo':
         fullname = 'solar orbiter'
@@ -204,15 +212,11 @@ def cdftopickle(magpath, swapath, sc):
             print('solo cdf')
             b = m1.varget('B_RTN')
             time = m1.varget('EPOCH')
-        #try:
-        #    b = m1.varget('B_RTN')
         
         elif sc == 'psp':
             print('psp cdf')
             b = m1.varget('psp_fld_l2_mag_RTN_1min')
             time = m1.varget('epoch_mag_RTN_1min')
-        #except:
-        #    b = m1.varget('psp_fld_l2_mag_RTN_1min')
         
         elif sc =='wind':
             print('wind cdf')
@@ -268,7 +272,7 @@ def cdftopickle(magpath, swapath, sc):
     bn1[bn1 > thresh] = np.nan
     bn1[bn1 < -thresh] = np.nan
 
-    
+    # interpolate between non nan values
     ll.time = time_int
     ll.bx = np.interp(time_int_mat, time1_mat[~np.isnan(br1)], br1[~np.isnan(br1)])
     ll.by = np.interp(time_int_mat, time1_mat[~np.isnan(bt1)], bt1[~np.isnan(bt1)])
@@ -284,11 +288,10 @@ def cdftopickle(magpath, swapath, sc):
         ll.vt = np.sqrt(ll.vx**2 + ll.vy**2 + ll.vz**2)
 
     if sc == 'solo':
-        #Solar Orbiter position with sunpy
+        # Solar Orbiter position with sunpy
         coord = get_horizons_coord(sc, time={'start': time_int[0], 'stop': time_int[-1], 'step': '1m'})  
         heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
         
-        #time=heeq.obstime.to_datetime()
         ll.r = heeq.radius.value
         ll.lon = heeq.lon.value
         ll.lat = heeq.lat.value
@@ -296,38 +299,7 @@ def cdftopickle(magpath, swapath, sc):
         ll = sphere2cart(ll)
         
         print(ll.x, ll.y, ll.z)
-        
-        #Solar Orbiter position with astrospice
-        #kernels = astrospice.registry.get_kernels(fullname, 'predict')
-        #solo_kernel = kernels[0]
 
-        #solo_coords = astrospice.generate_coords(fullname, time_int)
-        
-        #solo_coords_heeq = solo_coords.transform_to(sunpy.coordinates.HeliographicStonyhurst())
-
-        #ll.lon = solo_coords_heeq.lon.value
-        #ll.lat = solo_coords_heeq.lat.value
-        #ll.r = solo_coords_heeq.radius.to(u.au).value    
-
-        #ll = sphere2cart(ll)
-        #print(ll.x, ll.y, ll.z)
-        
-    #try:
-    #    #spacecraft position with astrospice
-    #    kernels = astrospice.registry.get_kernels(fullname, 'predict')
-    #    solo_kernel = kernels[0]
-    #
-    #    solo_coords = astrospice.generate_coords(fullname, time_int)
-    #    
-    #    solo_coords_heeq = solo_coords.transform_to(sunpy.coordinates.HeliographicStonyhurst())
-    #
-    #    ll.lon = solo_coords_heeq.lon.value
-    #    ll.lat = solo_coords_heeq.lat.value
-    #    ll.r = solo_coords_heeq.radius.to(u.au).value    
-    #
-    #    ll = sphere2cart(ll)
-    #    print(ll.x, ll.y, ll.z)
-    
     elif sc == 'psp':    
         # PSP position with sunpy
         coord = get_horizons_coord(sc, time={'start': time_int[0], 'stop': time_int[-1], 'step': '1m'})  
@@ -340,23 +312,12 @@ def cdftopickle(magpath, swapath, sc):
         ll = sphere2cart(ll)
         
         print(ll.x, ll.y, ll.z)
-            
-    #except:  
-    #    coord = get_horizons_coord(sc, time={'start': time_int[0], 'stop': time_int[-1], 'step': '1m'})  
-    #    heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-    #    
-    #    ll.r = heeq.radius.value
-    #    ll.lon = heeq.lon.value
-    #    ll.lat = heeq.lat.value
-    #    
-    #    ll = sphere2cart(ll)
-    #    
-    #    print(ll.x, ll.y, ll.z)
 
     elif sc == 'wind':
-        # WIND position with sunpy
+        # Wind position with sunpy
         
-        # use 
+        # use EM-L1 as proxy for the Wind spacecraft position
+        # this is valid from 2004 on, where Wind was placed in orbit around L1
         coord = get_horizons_coord('EM-L1', time={'start': time_int[0], 'stop': time_int[-1], 'step': '1m'})  
         heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
         
@@ -364,14 +325,12 @@ def cdftopickle(magpath, swapath, sc):
         ll.lon = heeq.lon.value
         ll.lat = heeq.lat.value
         
-        
         ll = sphere2cart(ll)
         
         print(ll.x, ll.y, ll.z)
      
     else:
         print('no spacecraft position')
-        
         
     return ll
     
